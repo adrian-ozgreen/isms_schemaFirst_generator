@@ -21,6 +21,8 @@ from docx.table import _Cell, Table
 
 from ..models import DocumentModel, Section, ContentBlock, DocMetadata  # adjust import if needed
 
+import re
+
 # Placeholder → metadata resolver (all supported placeholders)
 PLACEHOLDER_MAP: Dict[str, Callable[[DocMetadata], str]] = {
     "[[DOC_ID]]":               lambda m: m.doc_id,
@@ -222,6 +224,56 @@ def _render_table_block(doc: Document, block: ContentBlock) -> None:
 
 
 
+# ---------------------------------------------------------------------------
+# List normalisation helpers
+# ---------------------------------------------------------------------------
+
+# Matches leading bullet-like characters: •, -, –, *
+_BULLET_PREFIX_RE = re.compile(r"^\s*[•\-–*]\s+")
+
+# Matches leading numbers with dot or ) e.g. "1. ", "2) "
+_NUMBER_PREFIX_RE = re.compile(r"^\s*\d+[.)]\s+")
+
+
+def _normalise_block(block: ContentBlock) -> ContentBlock:
+    """
+    Convert 'fake' list paragraphs (that start with bullet / number text)
+    into real bullet_list or numbered_list blocks so that the renderer
+    can apply ISMS List Bullet / ISMS List Numbered styles.
+
+    This is especially useful when the source document used a body style
+    for lists and the JSON ended up with kind='paragraph'.
+    """
+    if block.kind != "paragraph":
+        return block
+
+    raw = block.text
+    if not isinstance(raw, str):
+        return block
+
+    text = raw.lstrip()
+    if not text:
+        return block
+
+    # Bullet-style text like "• item", "- item", "– item", "* item"
+    if _BULLET_PREFIX_RE.match(text):
+        clean = _BULLET_PREFIX_RE.sub("", text, count=1).strip()
+        if not clean:
+            return block
+        return ContentBlock(kind="bullet_list", text=[clean])
+
+    # Numbered-style text like "1. item", "2) item"
+    if _NUMBER_PREFIX_RE.match(text):
+        clean = _NUMBER_PREFIX_RE.sub("", text, count=1).strip()
+        if not clean:
+            return block
+        return ContentBlock(kind="numbered_list", text=[clean])
+
+    return block
+
+
+
+
 
 # -------------------------------------------------------------------
 # Metadata → document properties / control table
@@ -389,7 +441,10 @@ def _render_section_recursive(doc: Document, section: Section) -> None:
 
     # Append content blocks
     for block in section.content:
+        # Auto-detect fake bullets/numbered items and normalise them
+        block = _normalise_block(block)
         _render_content_block(doc, block)
+
 
     # Render subsections after content
     for sub in section.subsections:
