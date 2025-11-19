@@ -1,0 +1,1 @@
+Applies to all TracWater personnel who create, update, review, approve, or publish ISMS artefacts with the Hybrid Generator. Covers authoring JSON, using content blocks, dynamic tables, profiles validation, and Word output handling

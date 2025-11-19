@@ -1,0 +1,1 @@
+Profiles enforce required/optional sections by document_type (Policy, Procedure, Record). The pipeline validates the JSON before render; missing required sections raise a build error. The matrix below shows required vs optional sections.

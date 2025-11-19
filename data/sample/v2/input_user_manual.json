@@ -1,0 +1,687 @@
+{
+"metadata": {
+"doc_id": "MAN-IS-002",
+"title": "User Manual – ISMS Document Generator v2",
+"doc_type": "Record",
+"version": "0.1",
+"status": "Draft",
+"owner": "ISMS Manager",
+"approver": "CTO",
+"confidentiality": "Internal – TracWater Only",
+"date_completed": "2025-11-14",
+"next_review_date": "2026-11-14"
+,
+"related_documents": [
+"POL-IS-001 Information Security Policy",
+"SOP-IS-IMS-001 ISMS Document Creation Procedure",
+"TEMPL-IS-BASE-001 ISMS_Base_Master Template",
+"REG-IS-DC-001 Document Control Register",
+"REG-IS-REF-001 Master Reference Register"
+]
+},
+"sections": [
+{
+"key": "title_page",
+"title": "Title Page",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "User Manual – ISMS Document Generator v2"
+},
+{
+"kind": "paragraph",
+"text": "Hybrid, schema-first ISMS document generator"
+},
+{
+"kind": "paragraph",
+"text": "This User Manual explains how to use the ISMS Document Generator v2 to create, version and maintain ISO 27001:2022 aligned information security documents using JSON input and a Microsoft Word master template."
+}
+],
+"subsections": []
+},
+{
+"key": "document_control",
+"title": "Document Control",
+"level": 1,
+"content": [
+{
+"kind": "bullet_list",
+"text": [
+"Document ID: MAN-IS-002",
+"Title: User Manual – ISMS Document Generator v2",
+"Document Type: Record",
+"Version: 0.1",
+"Status: Draft",
+"Owner: ISMS Manager",
+"Approver: To be assigned",
+"Confidentiality: Internal use only"
+]
+},
+{
+"kind": "paragraph",
+"text": "The ISMS Manager is responsible for ensuring that this User Manual remains up to date with the implemented features of the ISMS Document Generator v2."
+}
+],
+"subsections": []
+},
+{
+"key": "table_of_contents",
+"title": "Table of Contents",
+"level": 1,
+"content": [
+{
+"kind": "numbered_list",
+"text": [
+"Title Page",
+"Document Control",
+"Table of Contents",
+"Revision History",
+"Approval Signatures",
+"Document Classification",
+"Purpose",
+"Scope",
+"Roles and Responsibilities",
+"Related Documents",
+"Prerequisites",
+"Directory Overview",
+"JSON Input Structure",
+"Generating a New Document",
+"Creating a New Version",
+"Profiles Driven Rules",
+"Version Control and Archiving",
+"Troubleshooting",
+"Governance"
+]
+}
+],
+"subsections": []
+},
+{
+"key": "revision_history",
+"title": "Revision History",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "This section records the history of changes to this User Manual."
+},
+{
+"kind": "bullet_list",
+"text": [
+"Version 0.1 – Initial draft of User Manual for ISMS Document Generator v2, created alongside early prototype implementation."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "approval_signatures",
+"title": "Approval Signatures",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "The following approvals are required before this User Manual can be used as a controlled ISMS record."
+},
+{
+"kind": "bullet_list",
+"text": [
+"ISMS Manager: ___________________________    Date: ___ / ___ / ______",
+"CTO or Technical Lead: ___________________    Date: ___ / ___ / ______",
+"CEO or Delegate (if required): ___________    Date: ___ / ___ / ______"
+]
+}
+],
+"subsections": []
+},
+{
+"key": "document_classification",
+"title": "Document Classification",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "This User Manual is classified as an internal ISMS record and supports the organisation's information security and quality management objectives."
+}
+],
+"subsections": [
+{
+"key": "distribution_list",
+"title": "Distribution List",
+"level": 2,
+"content": [
+{
+"kind": "bullet_list",
+"text": [
+"ISMS Manager and ISMS implementation team",
+"Software development and DevOps teams supporting the ISMS Document Generator v2",
+"Business process owners who generate or maintain ISMS documentation",
+"Internal auditors and quality assurance personnel",
+"External auditors, on request and subject to confidentiality requirements"
+]
+}
+],
+"subsections": []
+},
+{
+"key": "handling_requirements",
+"title": "Handling Requirements",
+"level": 2,
+"content": [
+{
+"kind": "bullet_list",
+"text": [
+"Store the approved version in the controlled ISMS document repository.",
+"Do not distribute outside the organisation without approval from the ISMS Manager.",
+"Ensure that only the latest approved version is used when training or guiding users.",
+"Protect against unauthorised modification, deletion or disclosure.",
+"Reference this manual only via its controlled location or document control register entry."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "retention_period",
+"title": "Retention Period",
+"level": 2,
+"content": [
+{
+"kind": "paragraph",
+"text": "This User Manual must be retained for the life of the ISMS Document Generator v2 and for at least three years after the generator is decommissioned, or for the period defined by the organisation's ISMS and quality management retention policies, whichever is longer."
+}
+],
+"subsections": []
+}
+]
+},
+{
+"key": "purpose",
+"title": "Purpose",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "The purpose of this User Manual is to provide clear, practical instructions for using the ISMS Document Generator v2, a hybrid, schema-first automation tool that creates ISO 27001 aligned documents in Microsoft Word using JSON input and a master template."
+},
+{
+"kind": "bullet_list",
+"text": [
+"Explain how JSON input files must be structured and validated.",
+"Describe how the generator maps JSON sections to Word template sections.",
+"Show how to run the command-line interface (CLI) for common use cases.",
+"Describe how to create a new document and how to generate an updated version.",
+"Provide troubleshooting guidance and escalation paths."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "scope",
+"title": "Scope",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "This User Manual applies to all personnel who create, update or maintain ISMS documents using the ISMS Document Generator v2."
+},
+{
+"kind": "bullet_list",
+"text": [
+"In scope: Policies, procedures and records generated from the ISMS_Base_Master Word template using JSON input.",
+"In scope: Command-line usage of the generator on development and production environments.",
+"In scope: Management of JSON input files stored alongside the ISMS documentation set.",
+"Out of scope: Manual editing of Word templates, detailed Python code design, and infrastructure configuration not directly related to generator usage."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "roles_and_responsibilities",
+"title": "Roles and Responsibilities",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "The effective and secure operation of the ISMS Document Generator v2 depends on clearly defined roles and responsibilities."
+}
+],
+"subsections": [
+{
+"key": "isms_manager",
+"title": "ISMS Manager",
+"level": 2,
+"content": [
+{
+"kind": "bullet_list",
+"text": [
+"Owns this User Manual and ensures it is kept up to date.",
+"Approves new document profiles and JSON schema changes that affect ISMS compliance.",
+"Ensures generated documents follow the organisation's document control requirements.",
+"Coordinates training for users of the ISMS Document Generator v2."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "document_authors",
+"title": "Document Authors and Process Owners",
+"level": 2,
+"content": [
+{
+"kind": "bullet_list",
+"text": [
+"Draft new or updated JSON input files using the approved schema and templates.",
+"Provide accurate content for each mandatory section (Purpose, Scope, roles, etc.).",
+"Review generated Word documents and confirm that content and formatting are correct.",
+"Request updates to profiles or schema when new document types are required."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "development_team",
+"title": "Development and DevOps Team",
+"level": 2,
+"content": [
+{
+"kind": "bullet_list",
+"text": [
+"Maintain the ISMS Document Generator v2 codebase, dependencies and runtime environment.",
+"Implement schema changes, new profiles and automated tests as approved by the ISMS Manager.",
+"Provide technical support for installation, CLI usage and integration into pipelines.",
+"Ensure secure development practices are followed in line with ISMS controls."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "internal_auditors",
+"title": "Internal Auditors and Quality Assurance",
+"level": 2,
+"content": [
+{
+"kind": "bullet_list",
+"text": [
+"Verify that generated documents comply with ISO 27001 and internal standards.",
+"Review usage of the generator as part of periodic ISMS and quality audits.",
+"Raise nonconformities and improvement opportunities related to documentation automation."
+]
+}
+],
+"subsections": []
+}
+]
+},
+{
+"key": "related_documents",
+"title": "Related Documents",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "The following documents support or are referenced by the ISMS Document Generator v2 and this User Manual."
+},
+{
+"kind": "bullet_list",
+"text": [
+"POL-IS-001 Information Security Policy",
+"POL-IS-DEV-001 Secure Development Policy",
+"SOP-IS-IMS-001 ISMS Document Creation Procedure",
+"SOP-IS-IMS-002 ISMS Document Review and Approval Procedure",
+"TEMPL-IS-BASE-001 ISMS_Base_Master Word Template",
+"REG-IS-DC-001 Document Control Register",
+"REG-IS-REF-001 Master Reference Register",
+"JSON Schema for ISMS Document Generator v2 (latest approved version)"
+]
+}
+],
+"subsections": []
+},
+{
+"key": "prerequisites",
+"title": "Prerequisites",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "Before using the ISMS Document Generator v2, ensure the following prerequisites are met."
+},
+{
+"kind": "bullet_list",
+"text": [
+"Access to the ISMS Document Generator v2 environment (development, test or production).",
+"Installed runtime (for example, Python and any required virtual environment) as defined by the technical implementation notes.",
+"Access to the approved ISMS_Base_Master Word template.",
+"Access to the approved JSON schema definition and example JSON files.",
+"Read and write access to the shared folders where JSON inputs and generated documents are stored.",
+"Basic familiarity with command-line tools or the organisation's automation pipeline."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "directory_overview",
+"title": "Directory Overview",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "The ISMS Document Generator v2 uses a structured directory layout to keep templates, JSON inputs and generated outputs organised."
+},
+{
+"kind": "bullet_list",
+"text": [
+"template/: contains the ISMS_Base_Master Word template and any supporting assets.",
+"schemas/: contains the JSON schema files that define mandatory and optional sections.",
+"profiles/: contains JSON profile definitions for different document types (Policy, Procedure, Record).",
+"input/: working area for user-created JSON input files describing specific documents.",
+"output/: location where generated Word documents are written.",
+"logs/: optional folder where the generator writes execution logs and error details."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "json_input_structure",
+"title": "JSON Input Structure",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "The ISMS Document Generator v2 is schema-first. Every JSON input file must conform to the approved JSON schema and include all mandatory sections."
+},
+{
+"kind": "paragraph",
+"text": "At a high level, the JSON input file has two top-level objects: metadata and sections."
+},
+{
+"kind": "bullet_list",
+"text": [
+"metadata: holds document-level information such as document ID, title, type, version, status, owner, approver and related document references.",
+"sections: an ordered list of section objects, each of which maps to a logical section in the Word document."
+]
+},
+{
+"kind": "numbered_list",
+"text": [
+"Start from a validated example JSON file supplied with this User Manual.",
+"Update metadata fields (doc_id, title, doc_type, version, status, owner, approver, related_documents).",
+"Ensure all mandatory level 1 sections exist: title_page, document_control, table_of_contents, revision_history, approval_signatures, document_classification, purpose, scope, roles_and_responsibilities, related_documents.",
+"Under document_classification, ensure mandatory level 2 subsections exist: distribution_list, handling_requirements, retention_period.",
+"For each section, populate the content array with paragraph, bullet_list or numbered_list blocks as needed.",
+"Validate the JSON file against the schema before running the generator."
+]
+}
+],
+"subsections": [
+{
+"key": "content_block_kinds",
+"title": "Content Block Kinds",
+"level": 2,
+"content": [
+{
+"kind": "paragraph",
+"text": "Within each section, the content array is made up of content blocks. Each block has a kind and text field."
+},
+{
+"kind": "bullet_list",
+"text": [
+"kind = paragraph: text is a single string containing a paragraph of text.",
+"kind = bullet_list: text is an array of strings, each representing a bullet point.",
+"kind = numbered_list: text is an array of strings, each representing a numbered list item."
+]
+},
+{
+"kind": "paragraph",
+"text": "Use paragraphs for narrative explanation, bullet_list for unordered lists and numbered_list for step-by-step procedures."
+}
+],
+"subsections": []
+},
+{
+"key": "section_levels",
+"title": "Section Levels and Hierarchy",
+"level": 2,
+"content": [
+{
+"kind": "paragraph",
+"text": "Each section in the JSON file has a level field that controls how it is rendered in the Word document and how it relates to its parent and subsections."
+},
+{
+"kind": "bullet_list",
+"text": [
+"Level 1: top-level sections in the document (for example, Purpose, Scope).",
+"Level 2: subsections under a level 1 section (for example, distribution_list under document_classification).",
+"Level 3 and 4: deeper nesting, used sparingly for complex documents.",
+"A subsection must always have level equal to parent.level + 1."
+]
+}
+],
+"subsections": []
+}
+]
+},
+{
+"key": "generating_a_new_document",
+"title": "Generating a New Document",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "This section describes the end-to-end process for generating a new ISMS document from a JSON input file."
+},
+{
+"kind": "numbered_list",
+"text": [
+"Identify the document type you need to create (Policy, Procedure or Record) and confirm that a profile exists.",
+"Copy the closest example JSON input file from the examples or templates folder into the input/ directory.",
+"Update the metadata fields to reflect the new document (doc_id, title, doc_type, version, status, owner, approver and related_documents).",
+"Review the mandatory sections and ensure all required content is provided.",
+"Add or update any optional sections needed for this specific document.",
+"Validate the JSON file against the schema using the provided validation command or your IDE tooling.",
+"Run the ISMS Document Generator v2 against the JSON file using the CLI.",
+"Open the generated Word document, check layout, styles and content for correctness.",
+"If changes are required, update the JSON file and re-run the generator until the document is correct.",
+"Submit the generated document for review and approval in line with the ISMS document control procedure."
+]
+}
+],
+"subsections": [
+{
+"key": "cli_usage",
+"title": "CLI Usage Example",
+"level": 2,
+"content": [
+{
+"kind": "paragraph",
+"text": "The ISMS Document Generator v2 is typically invoked from a command line or integrated into an automation pipeline."
+},
+{
+"kind": "bullet_list",
+"text": [
+"Example command (illustrative only):",
+"1. Activate the virtual environment if required.",
+"2. Run: python -m isms_core_v2.generate --input input/MAN-IS-002.json --output output/MAN-IS-002.docx",
+"3. Review the log output for any validation errors or warnings."
+]
+},
+{
+"kind": "paragraph",
+"text": "Ensure that the template and schema locations used by the CLI match the directories defined in this User Manual and in your local configuration."
+}
+],
+"subsections": []
+}
+]
+},
+{
+"key": "creating_a_new_version",
+"title": "Creating a New Version",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "The ISMS Document Generator v2 makes it easy to create updated versions of existing ISMS documents by re-using and modifying existing JSON input files."
+},
+{
+"kind": "numbered_list",
+"text": [
+"Locate the existing JSON input file for the document you want to update.",
+"Copy the file and rename it using the new version naming convention or update the version field inside the same file according to local practice.",
+"Update the metadata.version and metadata.status fields to reflect the new draft version.",
+"Add a new entry to the revision_history section describing the changes being made.",
+"Update relevant sections of the JSON to reflect the new or changed content.",
+"Validate the updated JSON file against the schema.",
+"Run the generator to create the new version of the Word document.",
+"Review the changes in the generated document and confirm that they match the intended updates.",
+"Update the Document Control Register and file locations according to the ISMS document control procedure."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "profiles_driven_rules",
+"title": "Profiles Driven Rules",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "The ISMS Document Generator v2 uses profiles to define which sections are mandatory or optional for different document types."
+},
+{
+"kind": "bullet_list",
+"text": [
+"Each profile corresponds to a document type such as Policy, Procedure or Record.",
+"Profiles reference section keys and mark them as mandatory or optional.",
+"During validation, the generator checks that all mandatory sections defined by the selected profile are present in the JSON file.",
+"Optional sections are included if present but are not required for the document to be generated.",
+"Profiles support consistent structure across documents of the same type while allowing flexibility where needed."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "version_control_and_archiving",
+"title": "Version Control and Archiving",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "To maintain traceability and compliance, JSON input files and generated Word documents must be subject to version control and archiving."
+},
+{
+"kind": "bullet_list",
+"text": [
+"Store JSON input files in a version-controlled repository (for example, Git) or controlled document storage.",
+"Ensure each generated Word document is saved in the appropriate Draft, For Review or Approved folder.",
+"Link each JSON input file and its generated document to the corresponding entry in the Document Control Register.",
+"Do not delete historical JSON files or generated documents unless permitted by retention policies.",
+"Use tags or labels to identify documents generated automatically versus manually edited legacy documents."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "troubleshooting",
+"title": "Troubleshooting",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "This section provides guidance for resolving common issues encountered when using the ISMS Document Generator v2."
+}
+],
+"subsections": [
+{
+"key": "validation_errors",
+"title": "Schema Validation Errors",
+"level": 2,
+"content": [
+{
+"kind": "bullet_list",
+"text": [
+"Symptom: The generator reports that the JSON file does not conform to the schema.",
+"Check that all mandatory sections are present and correctly named.",
+"Verify that each section has the required fields: key, title, level, content, subsections.",
+"Confirm that subsection levels are exactly one greater than the parent level.",
+"Check that content blocks use only the allowed kinds: paragraph, bullet_list, numbered_list.",
+"Review any error message line numbers to identify the exact location of the problem."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "missing_content_in_word",
+"title": "Content Missing or Misplaced in Word Output",
+"level": 2,
+"content": [
+{
+"kind": "bullet_list",
+"text": [
+"Symptom: A section exists in the JSON file but does not appear in the generated Word document.",
+"Check that the section key matches the profile mapping and template expectations.",
+"Ensure that the section level is correct and consistent with the intended hierarchy.",
+"Confirm that the generator has been updated to support any new or custom sections.",
+"Review the logs for warnings about unmapped sections or unsupported keys."
+]
+}
+],
+"subsections": []
+},
+{
+"key": "formatting_issues",
+"title": "Formatting and Style Issues",
+"level": 2,
+"content": [
+{
+"kind": "bullet_list",
+"text": [
+"Symptom: Headings, bullets or numbering do not match the ISMS_Base_Master styles.",
+"Confirm that the Master template has not been modified outside the approved process.",
+"Check whether the generator has been configured to use custom styles (for example, ISMS Heading 1, ISMS Body).",
+"Regenerate the document after ensuring that the correct template file is being used.",
+"If issues persist, escalate to the development team to review the mapping logic."
+]
+}
+],
+"subsections": []
+}
+]
+},
+{
+"key": "governance",
+"title": "Governance",
+"level": 1,
+"content": [
+{
+"kind": "paragraph",
+"text": "Governance of the ISMS Document Generator v2 ensures that the tool remains aligned with organisational objectives, regulatory requirements and ISO 27001:2022 controls."
+},
+{
+"kind": "bullet_list",
+"text": [
+"Changes to the JSON schema, profiles and template must follow the formal change management process.",
+"The ISMS Manager must review and approve significant changes before they are implemented in production.",
+"Periodic reviews should confirm that generated documents satisfy auditor expectations and internal standards.",
+"Lessons learned from audits and incidents should feed into improvements to this User Manual and the generator.",
+"Retirement or replacement of the generator must be planned to maintain continuity of ISMS documentation."
+]
+}
+],
+"subsections": []
+}
+]
+}

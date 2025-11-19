@@ -1,0 +1,83 @@
+I need you to generate a JSON file that will be used by a schema-driven ISMS document generator.
+
+Please follow these rules carefully:
+
+------------------------------------------------------------
+STRUCTURE RULES – DO NOT BREAK THESE
+------------------------------------------------------------
+1. The JSON must contain ONLY the following top-level keys:
+   {
+     "metadata": { ... },
+     "sections": [ ... ]
+   }
+
+2. The metadata object must contain:
+   - doc_id (string)
+   - title (string)
+   - doc_type (string: "Record", "Policy", or "Procedure")
+   - version (string)
+   - status (string: "Draft", "For Review", or "Approved")
+   - owner (string)
+   - approver (string or null)
+   - related_documents (array of strings)
+
+3. The sections array must contain Section objects with:
+   - key   (string, required)
+   - title (string, required)
+   - level (integer 1–4, required)
+   - content     (array of ContentBlock objects)
+   - subsections (array of Section objects)
+
+4. A Section may have subsections, but a subsection must have:
+   level = parent.level + 1
+   (Maximum level is 4.)
+
+5. A ContentBlock object must have:
+   - kind (one of: "paragraph", "bullet_list", "numbered_list")
+   - text (string OR array of strings depending on kind)
+
+6. DO NOT change the structure, schema, keys, or levels.
+   DO NOT rename or remove mandatory sections.
+   DO NOT add new keys or fields.
+
+------------------------------------------------------------
+MANDATORY TOP-LEVEL SECTIONS (level: 1)
+------------------------------------------------------------
+You MUST include these sections as level 1:
+- title_page
+- document_control
+- table_of_contents
+- revision_history
+- approval_signatures
+- document_classification
+- purpose
+- scope
+- roles_and_responsibilities
+- related_documents
+
+------------------------------------------------------------
+MANDATORY SUBSECTIONS UNDER document_classification (level: 2)
+------------------------------------------------------------
+- distribution_list
+- handling_requirements
+- retention_period
+
+------------------------------------------------------------
+YOUR TASK
+------------------------------------------------------------
+Create a JSON file for a document titled:
+
+"User Manual – ISMS Document Generator v2"
+
+This document will be a user manual explaining how to use the new schema-driven ISMS document generator.
+
+You must:
+- Use the exact schema above
+- Keep all required sections
+- Fill in helpful, readable content
+- Add additional sections as needed (e.g., how to use the CLI, how to structure the JSON, troubleshooting)
+- Ensure all subsection levels follow the rules
+
+Finally:
+- Output ONLY the JSON
+- Do NOT include explanations, commentary, or markdown

@@ -1,0 +1,1 @@
+Typical issues and remedies are captured in the table below (repair dialogs, missing sections, table placement, profile errors, Word field refresh). Use schema validation messages to correct input mistakes quickly

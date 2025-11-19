@@ -1,0 +1,130 @@
+{
+  "metadata": {
+    "doc_id": "MAN-IS-001",
+    "title": "TracWater ISMS Document Generation Manual",
+    "version": "1.0",
+    "document_type": "Record",
+    "owner": "Head of Product Development",
+    "approved_by": "CTO",
+    "status": "Approved",
+    "date_completed": "2025-11-12",
+    "next_review_date": "2026-11-12"
+  }
+  ,
+  
+  "history": [
+    {
+      "version": "1.0",
+      "date": "2025-11-12",
+      "author": "Head of Product Development",
+      "changes": "Initial release of TracWater ISMS Document Generation Manual",
+      "approved_by": "CTO"
+    }
+  ]
+
+  ,
+  "sections": {
+    "purpose": {"use_block": "man_purpose"}
+    ,
+    "roles_and_responsibilities": [
+      {
+          "role": "Information Security Manager",
+          "responsibilities": [
+              "Oversee the ISMS document automation process",
+              "Review and approve generated documents",
+              "Ensure document integrity and metadata are correct"
+          ]
+      },
+      {
+          "role": "System Administrator",
+          "responsibilities": [
+              "Maintain the automation environment",
+              "Update templates as required",
+              "Monitor generation logs"
+          ]
+      },
+      {
+          "role": "Document Owners",
+          "responsibilities": [
+              "Provide input sections for their documents",
+              "Validate content accuracy",
+              "Sign off on each new version"
+          ]
+      }
+  ]
+
+    ,
+
+  "record_content": [
+    "Purpose, scope, and prerequisites for using the TracWater ISMS Hybrid Generator.",
+    "How to generate new ISMS Policies, Procedures, and Records from JSON inputs.",
+    "How to generate new versions of existing documents and manage archiving.",
+    "How profiles, content blocks, and dynamic tables ensure consistency and compliance."
+  ],
+
+  
+    "scope": {"use_block": "man_scope"},
+    "prerequisites": {"use_block": "man_prerequisites"},
+    "directory_overview": {"use_block": "man_directory_overview"},
+    "json_input_structure": {"use_block": "man_json_input_structure"},
+    "generating_a_new_document": {"use_block": "man_generating_new_document"},
+    "creating_a_new_version": {"use_block": "man_creating_new_version"},
+    "profiles_driven_rules": {"use_block": "man_profiles_rules_intro"},
+    "version_control_and_archiving": {"use_block": "man_version_control"},
+    "troubleshooting": {"use_block": "man_troubleshooting_intro"},
+    "governance": {"use_block": "man_governance"}
+  },
+  "document_classification": {
+    "Classification": "Internal",
+    "Owner Dept": "Product Development"
+  },
+  "handling_requirements": {
+    "Storage": "ISMS/Share",
+    "Transmission": "Share link only; avoid email attachments",
+    "External Sharing": "By exception with NDA"
+  },
+  "retention_period": {
+    "Minimum Retention": "3 years",
+    "System of Record": "ISMS/Share",
+    "Disposition Owner": "ISMS Coordinator"
+  },
+  "distribution_list": [
+    {"recipient": "CEO", "role_or_dept": "Executive", "method": "Share link"},
+    {"recipient": "CTO", "role_or_dept": "Technology", "method": "Share link"}
+  ],
+  "approvals": [
+    {"name": "Jane Smith", "role": "CTO", "signature": "Approved", "date": "2025-11-12"}
+  ],
+  "dynamic_tables": [
+    {
+      "target": {"after_heading": "Profiles Driven Rules"},
+      "create_if_missing": true,
+      "heading": null,
+      "table_style": "TracWater table",
+      "columns": ["Document Type", "Required Sections", "Optional Sections"],
+      "rows": [
+        ["Policy", "Purpose, Scope, Policy Statements, Roles & Responsibilities", "Definitions & Acronyms, Related Documents, Compliance & Enforcement, Data Retention"],
+        ["Procedure", "Purpose, Scope, Procedure Steps, Roles & Responsibilities", "Related Documents, Definitions & Acronyms, Normative References, Compliance & Enforcement, Data Retention"],
+        ["Record", "Purpose, Scope", "Record Content, Related Documents"]
+      ]
+    },
+    {
+      "target": {"after_heading": "Troubleshooting"},
+      "create_if_missing": true,
+      "heading": null,
+      "table_style": "TracWater table",
+      "columns": ["Symptom", "Likely cause", "Fix"],
+      "rows": [
+        ["Repair dialog when opening DOCX", "Corrupted props (pre-v9)", "Use v9+ template; issue resolved"],
+        ["Section missing in output", "JSON key not in renderer’s keymap", "Add key to renderer or use fallback"],
+        ["Dynamic table mis-placed", "Heading mismatch", "Ensure “after_heading” matches exactly (case-insensitive)"],
+        ["[ERROR] Missing required section", "Profile expects section not in JSON", "Add {\"use_block\": …} or inline text"],
+        ["Fields not showing updated values", "Word fields need refresh", "Ctrl + A → F9"]
+      ]
+    }
+  ],
+  "related_documents": [
+    {"id": "POL-IT-001", "title": "Information Security Policy", "type": "Policy"},
+    {"id": "SOP-PD-002", "title": "Factory Data Integration Handover Procedure", "type": "Procedure"}
+  ]
+}

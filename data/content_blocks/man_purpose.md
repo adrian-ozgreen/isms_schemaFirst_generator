@@ -1,0 +1,1 @@
+Explains the objective of the manual and the generator’s role in producing ISO 27001–aligned Policies, Procedures, and Records from a single, validated JSON source using the TracWater ISMS master template. Ensures consistency, traceability, and reuse of standard clauses and tables.

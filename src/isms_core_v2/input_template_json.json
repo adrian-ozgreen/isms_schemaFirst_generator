@@ -1,0 +1,229 @@
+{
+  "metadata": {
+    "doc_id": "MAN-ISMS-001",
+    "title": "User Manual – ISMS Document Generator v2",
+    "doc_type": "Procedure",
+    "version": "0.1",
+    "status": "Draft",
+    "owner": "ISMS Manager",
+    "approver": "CTO",
+    "related_documents": [
+      "POL-IS-001",
+      "SOP-IT-014"
+    ]
+  },
+
+  "sections": [
+
+    {
+      "key": "title_page",
+      "title": "Title Page",
+      "level": 1,
+      "content": [
+        {
+          "kind": "paragraph",
+          "text": "User Manual – ISMS Document Generator v2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TracWater Pty Ltd"
+        }
+      ]
+    },
+
+    {
+      "key": "document_control",
+      "title": "Document Control",
+      "level": 1,
+      "content": [
+        {
+          "kind": "paragraph",
+          "text": "This section is managed by the Document Control table in the template. Metadata fields (DocID, Version, Owner, Status) are updated automatically."
+        }
+      ]
+    },
+
+    {
+      "key": "table_of_contents",
+      "title": "Table of Contents",
+      "level": 1,
+      "content": []
+    },
+
+    {
+      "key": "revision_history",
+      "title": "Revision History",
+      "level": 1,
+      "content": [
+        {
+          "kind": "paragraph",
+          "text": "Initial draft of the User Manual for the schema-driven ISMS document generator."
+        }
+      ]
+    },
+
+    {
+      "key": "approval_signatures",
+      "title": "Approval Signatures",
+      "level": 1,
+      "content": [
+        {
+          "kind": "paragraph",
+          "text": "Signature blocks to be completed when the document is approved."
+        }
+      ]
+    },
+
+    {
+      "key": "document_classification",
+      "title": "Document Classification",
+      "level": 1,
+      "content": [],
+      "subsections": [
+        {
+          "key": "distribution_list",
+          "title": "Distribution List",
+          "level": 2,
+          "content": [
+            {
+              "kind": "bullet_list",
+              "text": [
+                "ISMS Manager",
+                "CTO",
+                "Software Development Team",
+                "Operations Manager"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "handling_requirements",
+          "title": "Handling Requirements",
+          "level": 2,
+          "content": [
+            {
+              "kind": "paragraph",
+              "text": "Internal use only. Do not distribute outside TracWater without approval."
+            }
+          ]
+        },
+        {
+          "key": "retention_period",
+          "title": "Retention Period",
+          "level": 2,
+          "content": [
+            {
+              "kind": "paragraph",
+              "text": "Retain in the ISMS document repository for the life of the ISMS plus 7 years."
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "key": "purpose",
+      "title": "Purpose",
+      "level": 1,
+      "content": [
+        {
+          "kind": "paragraph",
+          "text": "Describe the purpose of this User Manual: to explain how to use the schema-driven ISMS document generator, including JSON input requirements and document generation steps."
+        }
+      ]
+    },
+
+    {
+      "key": "scope",
+      "title": "Scope",
+      "level": 1,
+      "content": [
+        {
+          "kind": "paragraph",
+          "text": "Define which users, systems, and ISMS document types are covered by this User Manual."
+        }
+      ]
+    },
+
+    {
+      "key": "roles_and_responsibilities",
+      "title": "Roles and Responsibilities",
+      "level": 1,
+      "content": [
+        {
+          "kind": "bullet_list",
+          "text": [
+            "ISMS Manager – owns the User Manual and approves changes.",
+            "Developers – maintain the generator code and schemas.",
+            "Document Authors – prepare JSON input files.",
+            "Approvers – review and approve generated ISMS documents."
+          ]
+        }
+      ]
+    },
+
+    {
+      "key": "related_documents",
+      "title": "Related Documents",
+      "level": 1,
+      "content": [
+        {
+          "kind": "paragraph",
+          "text": "List related ISMS policies, procedures, and technical references that support this User Manual."
+        }
+      ]
+    },
+
+    {
+      "key": "user_manual",
+      "title": "Using the ISMS Document Generator",
+      "level": 1,
+      "content": [
+        {
+          "kind": "paragraph",
+          "text": "This section describes how to use the schema-driven ISMS document generator end-to-end."
+        }
+      ],
+      "subsections": [
+        {
+          "key": "json_structure",
+          "title": "Understanding the JSON Structure",
+          "level": 2,
+          "content": [
+            {
+              "kind": "paragraph",
+              "text": "Explain the required JSON structure, including metadata and sections, and how they map to the generated Word document."
+            }
+          ]
+        },
+        {
+          "key": "cli_usage",
+          "title": "Command Line Usage",
+          "level": 2,
+          "content": [
+            {
+              "kind": "numbered_list",
+              "text": [
+                "Prepare a JSON file that conforms to the schema.",
+                "Open a terminal and navigate to the project root.",
+                "Run the generate command with the desired input and output paths."
+              ]
+            }
+          ]
+        },
+        {
+          "key": "troubleshooting",
+          "title": "Troubleshooting",
+          "level": 2,
+          "content": [
+            {
+              "kind": "paragraph",
+              "text": "Describe common validation errors and how to fix them, as well as how to check the generated document for correct headings and content."
+            }
+          ]
+        }
+      ]
+    }
+
+  ]
+}

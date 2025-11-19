@@ -1,0 +1,29 @@
+Policy:
+  required_sections:
+    - Purpose
+    - Scope
+    - Policy Statements
+    - Compliance and Enforcement
+  optional_sections:
+    - Normative References
+    - Roles and Responsibilities
+    - Definitions and Acronyms
+
+Procedure:
+  required_sections:
+    - Purpose
+    - Scope
+    - Procedure Steps
+    - Roles and Responsibilities
+  optional_sections:
+    - Normative References
+    - Related Documents
+    - Definitions and Acronyms
+
+Record:
+  required_sections:
+    - Purpose
+    - Scope
+    - Record Content
+  optional_sections:
+    - Related Documents

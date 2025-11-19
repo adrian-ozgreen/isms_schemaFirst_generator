@@ -1,0 +1,171 @@
+{
+  "metadata": {
+    "doc_id": "REC-OPS-001",
+    "title": "Water Quality Test Result Record",
+    "doc_type": "Record",
+    "version": "1.0",
+    "status": "Draft",
+    "owner": "Operations Manager",
+    "approver": "CTO",
+    "confidentiality": "Internal – TracWater Only",
+    "date_completed": "2025-11-14",
+    "next_review_date": "2026-11-14",
+    "related_documents": ["POL-IS-001", "SOP-OPS-004"]
+  },
+
+  "sections": [
+
+    {
+      "key": "title_page",
+      "title": "Title Page",
+      "level": 1,
+      "content": [
+        { "kind": "paragraph", "text": "Water Quality Test Result Record" },
+        { "kind": "paragraph", "text": "TracWater Pty Ltd" }
+      ]
+    },
+
+    {
+      "key": "document_control",
+      "title": "Document Control",
+      "level": 1,
+      "content": [
+        { "kind": "paragraph", "text": "DocID: REC-OPS-001" },
+        { "kind": "paragraph", "text": "Version: 1.0" },
+        { "kind": "paragraph", "text": "Owner: Operations Manager" }
+      ]
+    },
+
+    {
+      "key": "table_of_contents",
+      "title": "Table of Contents",
+      "level": 1,
+      "content": []
+    },
+
+    {
+      "key": "revision_history",
+      "title": "Revision History",
+      "level": 1,
+      "content": [
+        { "kind": "paragraph", "text": "Initial draft created." }
+      ]
+    },
+
+    {
+      "key": "approval_signatures",
+      "title": "Approval Signatures",
+      "level": 1,
+      "content": []
+    },
+
+    {
+      "key": "document_classification",
+      "title": "Document Classification",
+      "level": 1,
+      "content": [],
+      "subsections": [
+        {
+          "key": "distribution_list",
+          "title": "Distribution List",
+          "level": 2,
+          "content": [
+            { "kind": "paragraph", "text": "Operations team" }
+          ]
+        },
+        {
+          "key": "handling_requirements",
+          "title": "Handling Requirements",
+          "level": 2,
+          "content": [
+            { "kind": "paragraph", "text": "Internal use only." }
+          ]
+        },
+        {
+          "key": "retention_period",
+          "title": "Retention Period",
+          "level": 2,
+          "content": [
+            { "kind": "paragraph", "text": "Retain for 7 years." }
+          ]
+        }
+      ]
+    },
+
+    {
+      "key": "purpose",
+      "title": "Purpose",
+      "level": 1,
+      "content": [
+        { "kind": "paragraph", "text": "This record captures routine water quality test results." }
+      ]
+    },
+
+    {
+      "key": "scope",
+      "title": "Scope",
+      "level": 1,
+      "content": [
+        { "kind": "paragraph", "text": "Applies to all TracWater field equipment checks." }
+      ]
+    },
+
+    {
+      "key": "roles_and_responsibilities",
+      "title": "Roles and Responsibilities",
+      "level": 1,
+      "content": [
+        { "kind": "bullet_list", "text": ["Technician: Performs sampling", "Operations Manager: Reviews results"] }
+      ]
+    },
+
+    {
+      "key": "related_documents",
+      "title": "Related Documents",
+      "level": 1,
+      "content": [
+        { "kind": "paragraph", "text": "See metadata.related_documents for full mapping." }
+      ]
+    },
+
+    {
+      "key": "record_content",
+      "title": "Record Content",
+      "level": 1,
+      "content": [
+        { "kind": "paragraph", "text": "The following sections contain the recorded data." }
+      ],
+      "subsections": [
+        {
+          "key": "sampling_details",
+          "title": "Sampling Details",
+          "level": 2,
+          "content": [
+            { "kind": "paragraph", "text": "Sampling occurred at 09:30 on 2025-11-10." }
+          ],
+          "subsections": [
+            {
+              "key": "sampling_environment",
+              "title": "Sampling Environment",
+              "level": 3,
+              "content": [
+                { "kind": "paragraph", "text": "Weather: Sunny, 28°C" }
+              ],
+              "subsections": [
+                {
+                  "key": "environment_notes",
+                  "title": "Environment Notes",
+                  "level": 4,
+                  "content": [
+                    { "kind": "paragraph", "text": "No anomalies detected during sampling." }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+
+  ]
+}
