@@ -1106,6 +1106,61 @@
                   "header": null,
                   "rows": null,
                   "caption": null
+                },
+                {
+                  "kind": "table",
+                  "text": null,
+                  "header": [
+                    "Category",
+                    "Description",
+                    "Typical Data Points",
+                    "Conversion Method Reference"
+                  ],
+                  "rows": [
+                    [
+                      "1",
+                      "Floating-Point Registers",
+                      "DO, pH, Turbidity, Conductivity, Temperature, Salinity",
+                      "4.10.3 Category 1"
+                    ],
+                    [
+                      "2",
+                      "Byte-to-ASCII Registers",
+                      "OEM Serial Number",
+                      "4.10.3 Category 2"
+                    ],
+                    [
+                      "3",
+                      "Bit-Code Registers",
+                      "Operating Error Codes, Status Flags",
+                      "4.10.3 Category 3"
+                    ],
+                    [
+                      "4",
+                      "Unsigned Short Registers",
+                      "Brush Interval Setting",
+                      "4.10.3 Category 4"
+                    ],
+                    [
+                      "5",
+                      "Signed Short Registers",
+                      "Battery Voltage",
+                      "4.10.3 Category 5"
+                    ],
+                    [
+                      "6",
+                      "Byte-Size Hex Registers",
+                      "Startup Mode, Device Flags",
+                      "4.10.3 Category 6"
+                    ],
+                    [
+                      "7",
+                      "Byte-to-Integer Registers",
+                      "Hardware/Software Versions",
+                      "4.10.3 Category 7 (optional)"
+                    ]
+                  ],
+                  "caption": null
                 }
               ],
               "subsections": []
@@ -1114,7 +1169,255 @@
               "key": "modbus_register_map_read_function_0x03_only",
               "title": "MODBUS Register Map (Read Function 0x03 only)",
               "level": 3,
-              "content": [],
+              "content": [
+                {
+                  "kind": "table",
+                  "text": null,
+                  "header": [
+                    "Data Name",
+                    "Sensor Type",
+                    "Data Category",
+                    "MODBUS id",
+                    "Base-0 Address\n(decimal)",
+                    "Registers (decimal)",
+                    "Unit",
+                    "Stored Value Type",
+                    "Conversion Method",
+                    "RDA id"
+                  ],
+                  "rows": [
+                    [
+                      "Dissolved oxygen concentration",
+                      "Dissolved oxygen concentration",
+                      "Water quality",
+                      "1",
+                      "9,729",
+                      "2",
+                      "mg/L",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-001"
+                    ],
+                    [
+                      "Turbidity",
+                      "Turbidity",
+                      "Water quality",
+                      "1",
+                      "9,730",
+                      "2",
+                      "NTU",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-002"
+                    ],
+                    [
+                      "Electrical conductivity",
+                      "Electrical conductivity",
+                      "Water quality",
+                      "1",
+                      "9,731",
+                      "2",
+                      "mS/cm",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-003"
+                    ],
+                    [
+                      "pH",
+                      "Acidity",
+                      "Water quality",
+                      "1",
+                      "9,732",
+                      "2",
+                      "pH",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-004"
+                    ],
+                    [
+                      "Temperature",
+                      "Temperature",
+                      "Water quality",
+                      "1",
+                      "9,734",
+                      "2",
+                      "̊C",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-005"
+                    ],
+                    [
+                      "Dissolved oxygen saturation",
+                      "Dissolved oxygen saturation",
+                      "Water quality",
+                      "1",
+                      "9,738",
+                      "2",
+                      "%",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-006"
+                    ],
+                    [
+                      "Oxidation-reduction potential",
+                      "Oxidation-reduction potential",
+                      "Water quality",
+                      "1",
+                      "9,739",
+                      "2",
+                      "mV",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-007"
+                    ],
+                    [
+                      "Chlorophyll",
+                      "Chlorophyll",
+                      "Water quality",
+                      "1",
+                      "9,740",
+                      "2",
+                      "µg/L",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-008"
+                    ],
+                    [
+                      "Blue-green algae",
+                      "Blue-green algae",
+                      "Water quality",
+                      "1",
+                      "9,741",
+                      "2",
+                      "cells/mL",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-009"
+                    ],
+                    [
+                      "Total dissolved solids",
+                      "Total dissolved solids",
+                      "Water quality",
+                      "1",
+                      "9,743",
+                      "2",
+                      "mg/L",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-010"
+                    ],
+                    [
+                      "Salinity",
+                      "Salinity",
+                      "Water quality",
+                      "1",
+                      "9,736",
+                      "2",
+                      "ppt",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-011"
+                    ],
+                    [
+                      "OEM serial number",
+                      "Serial Number",
+                      "Heartbeat",
+                      "1",
+                      "5,120",
+                      "6",
+                      "Not applicable",
+                      "ASCII string (6 registers = 12 chars)",
+                      "2",
+                      "RDA-014"
+                    ],
+                    [
+                      "Operating error",
+                      "Device error",
+                      "Heartbeat",
+                      "1",
+                      "2,048",
+                      "1",
+                      "Not applicable",
+                      "Bit field (status word). Read only the High Byte, ignore the Low Byte.",
+                      "3",
+                      "RDA-015"
+                    ],
+                    [
+                      "Brush interval",
+                      "Device setting",
+                      "Operational",
+                      "1",
+                      "3,584",
+                      "1",
+                      "minutes",
+                      "16-bit signed integer (High Byte only)",
+                      "4",
+                      "RDA-016"
+                    ],
+                    [
+                      "Battery voltage",
+                      "Battery voltage",
+                      "Heartbeat",
+                      "2",
+                      "7,680",
+                      "",
+                      "Volts",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-012"
+                    ],
+                    [
+                      "Brush mode at startup",
+                      "Device setting",
+                      "Operational",
+                      "1",
+                      "6,912",
+                      "1",
+                      "",
+                      "16-bit signed integer (High Byte only)",
+                      "6",
+                      "RDA-017"
+                    ],
+                    [
+                      "Hardware (hw.) and software (sw.) versions",
+                      "",
+                      "Heartbeat",
+                      "1",
+                      "1,792",
+                      "2",
+                      "Not applicable",
+                      "Hex code (8-bit enumeration)",
+                      "7",
+                      "RDA-018"
+                    ],
+                    [
+                      "Salinity",
+                      "Salinity",
+                      "Operational",
+                      "1",
+                      "5,632",
+                      "2",
+                      "ppt",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-019"
+                    ],
+                    [
+                      "Barometer",
+                      "Barometer",
+                      "Operational",
+                      "1",
+                      "5,634",
+                      "2",
+                      "bar",
+                      "32-bit float (IEEE754, DCBA order)",
+                      "1",
+                      "RDA-020"
+                    ]
+                  ],
+                  "caption": null
+                }
+              ],
               "subsections": []
             },
             {
@@ -2261,6 +2564,145 @@
                   ],
                   "header": null,
                   "rows": null,
+                  "caption": null
+                },
+                {
+                  "kind": "table",
+                  "text": null,
+                  "header": [
+                    "Bit position",
+                    "Operating status"
+                  ],
+                  "rows": [
+                    [
+                      "0",
+                      "0: Brush is ok\n1: Brush problem"
+                    ],
+                    [
+                      "1",
+                      "0: Power state is ok\n1: Power state problem"
+                    ],
+                    [
+                      "2",
+                      "0: All sensors are ok\n1: There is at least one sensor problem"
+                    ],
+                    [
+                      "3",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "4",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "5",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "6",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "7",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "8",
+                      "0: First road power supply error \n1: First road power supply is ok"
+                    ],
+                    [
+                      "9",
+                      "0: Second road power supply error \n1: Second road power supply is ok"
+                    ],
+                    [
+                      "10",
+                      "0: Third road power supply error \n1: Third road power supply is ok"
+                    ],
+                    [
+                      "11",
+                      "0: Fourth road power supply error \n1: Fourth road power supply is ok"
+                    ],
+                    [
+                      "12",
+                      "0: Fifth road power supply error \n1: Fifth road power supply is ok"
+                    ],
+                    [
+                      "13",
+                      "0: Sixth road power supply error \n1: Sixth road power supply is ok"
+                    ],
+                    [
+                      "14",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "15",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "16",
+                      "0: Dissolved oxygen sensor communication error\n1: Dissolved oxygen sensor is ok"
+                    ],
+                    [
+                      "17",
+                      "0: Turbidity sensor communication error\n1: Turbidity sensor is ok"
+                    ],
+                    [
+                      "18",
+                      "0: Electrical conductivity sensor communication error\n1: Electrical conductivity sensor is ok"
+                    ],
+                    [
+                      "19",
+                      "0: pH sensor communication error\n1: pH sensor is ok"
+                    ],
+                    [
+                      "20",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "21",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "22",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "23",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "24",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "25",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "26",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "27",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "28",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "29",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "30",
+                      "Ignore this bit"
+                    ],
+                    [
+                      "31",
+                      "Ignore this bit"
+                    ]
+                  ],
                   "caption": null
                 },
                 {
@@ -3991,6 +4433,244 @@
                   "header": null,
                   "rows": null,
                   "caption": null
+                },
+                {
+                  "kind": "table",
+                  "text": null,
+                  "header": [
+                    "Asset ID",
+                    "Asset Name",
+                    "Data Source Type",
+                    "Sensor Category",
+                    "Unit",
+                    "Format",
+                    "Typical Range",
+                    "Typical Update Frequency",
+                    "Maximum TTL Update"
+                  ],
+                  "rows": [
+                    [
+                      "RDA-001",
+                      "Dissolved Oxygen Concentration",
+                      "Direct sensor",
+                      "Water quality",
+                      "mg/L",
+                      "Float",
+                      "0 to 20 mg/L",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-002",
+                      "Turbidity",
+                      "Direct sensor",
+                      "Water quality",
+                      "NTU",
+                      "Float",
+                      "0 to 500 NTU",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-003",
+                      "Electrical conductivity",
+                      "Direct sensor",
+                      "Water quality",
+                      "mS/cm",
+                      "Float",
+                      "0 to 2mS/cm",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-004",
+                      "pH",
+                      "Direct sensor",
+                      "Water quality",
+                      "pH Units",
+                      "Float",
+                      "4 to 9pH",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-005",
+                      "Temperature",
+                      "Direct sensor",
+                      "Water quality",
+                      "˚C",
+                      "Float",
+                      "1 to 45˚C",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-006",
+                      "Dissolved oxygen saturation",
+                      "Direct sensor",
+                      "Water quality",
+                      "%",
+                      "Float",
+                      "0 to 500%",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-007",
+                      "Oxidation-reduction potential",
+                      "Direct sensor",
+                      "Water quality",
+                      "mV",
+                      "Float",
+                      "0 to 2,000mV",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-008",
+                      "Chlorophyll",
+                      "Direct sensor",
+                      "Water quality",
+                      "µg/L",
+                      "Float",
+                      "0 to 500 µg/L",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-009",
+                      "Blue-green algae",
+                      "Direct sensor",
+                      "Water quality",
+                      "cells/mL",
+                      "Float",
+                      "0 to 300,000 cells/mL",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-010",
+                      "Total dissolved solids",
+                      "Direct sensor",
+                      "Water quality",
+                      "mg/L",
+                      "Float",
+                      "0 to 128,000mg/L",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-011",
+                      "Salinity",
+                      "Direct sensor",
+                      "Water quality",
+                      "ppt",
+                      "Float",
+                      "0 to 175ppt",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-012",
+                      "Battery Voltage",
+                      "Direct sensor",
+                      "Heartbeat",
+                      "V",
+                      "Float",
+                      "10 – 14 V",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-013",
+                      "Signal Strength (RSSI)",
+                      "Direct sensor",
+                      "Heartbeat",
+                      "dBm",
+                      "Integer",
+                      "–110 to –50",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-014",
+                      "OEM Serial Number",
+                      "Internal data field",
+                      "Identification",
+                      "Not applicable",
+                      "String (ASCII)",
+                      "Not applicable",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-015",
+                      "Operating Error Code",
+                      "Internal data field",
+                      "Heartbeat",
+                      "Not applicable",
+                      "Integer (Code Map)",
+                      "",
+                      "15 min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-016",
+                      "Brush mode interval",
+                      "Internal data field",
+                      "System status",
+                      "Not applicable",
+                      "Integer",
+                      "0 – 1,440 mm",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-017",
+                      "Brush mode at startup",
+                      "Internal data field",
+                      "System status",
+                      "Not applicable",
+                      "Integer",
+                      "0 or 1",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-018",
+                      "Hardware and software versions",
+                      "Internal data field",
+                      "System status",
+                      "Not applicable",
+                      "String",
+                      "",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-019",
+                      "Salinity",
+                      "Direct sensor",
+                      "System status",
+                      "ppt",
+                      "Float",
+                      "0 to 175ppt",
+                      "15min",
+                      "30 min."
+                    ],
+                    [
+                      "RDA-020",
+                      "Barometer",
+                      "Direct sensor",
+                      "System status",
+                      "V",
+                      "Float",
+                      "0 to 20 bar",
+                      "15min",
+                      "30 min."
+                    ]
+                  ],
+                  "caption": null
                 }
               ],
               "subsections": []
@@ -4232,7 +4912,162 @@
               "key": "portal_data",
               "title": "Portal data",
               "level": 3,
-              "content": [],
+              "content": [
+                {
+                  "kind": "table",
+                  "text": null,
+                  "header": [
+                    "Data name",
+                    "Data type",
+                    "Unit",
+                    "Decimal places",
+                    "Transformation function"
+                  ],
+                  "rows": [
+                    [
+                      "Dissolved Oxygen Concentration",
+                      "Water quality sensor",
+                      "mg/L",
+                      "Float",
+                      "Pass-through RDA-001"
+                    ],
+                    [
+                      "Turbidity",
+                      "Water quality sensor",
+                      "NTU",
+                      "Float",
+                      "Pass-through RDA-002"
+                    ],
+                    [
+                      "Electrical conductivity",
+                      "Water quality sensor",
+                      "µS/cm",
+                      "Float",
+                      "Pass-through RDA-003"
+                    ],
+                    [
+                      "pH",
+                      "Water quality sensor",
+                      "pH",
+                      "Float",
+                      "Pass-through RDA-004"
+                    ],
+                    [
+                      "Temperature",
+                      "Water quality sensor",
+                      "˚C",
+                      "Float",
+                      "Pass-through RDA-005"
+                    ],
+                    [
+                      "Dissolved oxygen saturation",
+                      "Water quality sensor",
+                      "%",
+                      "Float",
+                      "Pass-through RDA-006"
+                    ],
+                    [
+                      "Oxidation-reduction potential",
+                      "Water quality sensor",
+                      "mV",
+                      "Float",
+                      "Pass-through RDA-007"
+                    ],
+                    [
+                      "Chlorophyll",
+                      "Water quality sensor",
+                      "µg/L",
+                      "Float",
+                      "Pass-through RDA-008"
+                    ],
+                    [
+                      "Blue-green algae",
+                      "Water quality sensor",
+                      "cells/mL",
+                      "Float",
+                      "Pass-through RDA-009"
+                    ],
+                    [
+                      "Total dissolved solids",
+                      "Water quality sensor",
+                      "mg/L",
+                      "Float",
+                      "Pass-through RDA-010"
+                    ],
+                    [
+                      "Salinity",
+                      "Water quality sensor",
+                      "ppt",
+                      "Float",
+                      "Pass-through RDA-011"
+                    ],
+                    [
+                      "Battery Voltage",
+                      "Heartbeat",
+                      "V",
+                      "Float",
+                      "Pass-through RDA-012"
+                    ],
+                    [
+                      "Signal Strength (RSSI)",
+                      "Heartbeat",
+                      "dBm",
+                      "Integer",
+                      "Pass-through RDA-013"
+                    ],
+                    [
+                      "OEM Serial Number",
+                      "Heartbeat",
+                      "Not applicable",
+                      "String (ASCII)",
+                      "Pass-through RDA-014"
+                    ],
+                    [
+                      "Operating Error Code",
+                      "Heartbeat",
+                      "Not applicable",
+                      "Integer (Code Map)",
+                      "Pass-through RDA-015"
+                    ],
+                    [
+                      "Brush mode interval",
+                      "System status",
+                      "Not applicable",
+                      "Integer",
+                      "Pass-through RDA-016"
+                    ],
+                    [
+                      "Brush mode at startup",
+                      "System status",
+                      "Not applicable",
+                      "Integer",
+                      "Pass-through RDA-017"
+                    ],
+                    [
+                      "Hardware and software versions",
+                      "System status",
+                      "Not applicable",
+                      "String",
+                      "Pass-through RDA-018"
+                    ],
+                    [
+                      "Salinity",
+                      "System status",
+                      "ppt",
+                      "Float",
+                      "Pass-through RDA-019"
+                    ],
+                    [
+                      "Barometer",
+                      "System status",
+                      "bar",
+                      "Float",
+                      "Pass-through RDA-020"
+                    ]
+                  ],
+                  "caption": null
+                }
+              ],
               "subsections": []
             }
           ]

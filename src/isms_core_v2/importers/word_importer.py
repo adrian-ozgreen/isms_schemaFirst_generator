@@ -13,11 +13,16 @@ from typing import List, Optional, Set
 
 from docx import Document as DocxDocument
 from docx.text.paragraph import Paragraph as DocxParagraph
+from docx.table import Table as DocxTable
+from docx.oxml.ns import qn
+from docx.oxml.table import CT_Tbl
+from docx.oxml.text.paragraph import CT_P
 
 # If this import fails, change to: from isms_core_v2.models import Section, ContentBlock
 from src.isms_core_v2.models import Section, ContentBlock
 
-from docx.oxml.ns import qn
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -231,43 +236,70 @@ def _slugify_key(text: str) -> str:
     return slug or "section"
 
 
+
+def _iter_block_items(docx: DocxDocument):
+    """
+    Yield block-level items (paragraphs and tables) from the document body
+    in the order they appear.
+    """
+    body = docx.element.body
+    for child in body.iterchildren():
+        if isinstance(child, CT_P):
+            yield DocxParagraph(child, docx)
+        elif isinstance(child, CT_Tbl):
+            yield DocxTable(child, docx)
+
+
+
+
+
+# ---------------------------------------------------------------------------
+# Section tree builder
+# ---------------------------------------------------------------------------
+
 # ---------------------------------------------------------------------------
 # Section tree builder
 # ---------------------------------------------------------------------------
 
 def _build_sections_from_doc(docx: DocxDocument) -> List[Section]:
     """
-    v0 algorithm (Record + PMDS):
+    v0 algorithm (Record + PMDS), table-aware:
 
-    - Walk through all paragraphs in order.
-    - If paragraph is a heading → start a new Section at that level.
-    - Otherwise → attach content to the current section.
+    - Walk through all block items in order (paragraphs + tables).
+    - If a paragraph is a heading → start a new Section at that level.
+    - Otherwise → attach content (paragraph / list / table) to the current section.
     """
     root_sections: List[Section] = []
     stack: List[Section] = []
 
-    for p in docx.paragraphs:
-        style_name = (p.style.name or "").strip() if p.style else ""
-        level = _get_heading_level(style_name)
+    for block in _iter_block_items(docx):
+        # -------------------------------------------------------------------
+        # Paragraph handling (unchanged logic, just using block instead of p)
+        # -------------------------------------------------------------------
+        if isinstance(block, DocxParagraph):
+            p = block
+            style_name = (p.style.name or "").strip() if p.style else ""
+            level = _get_heading_level(style_name)
 
-        if level is not None:
-            # New section
-            new_section = Section(
-                key=_slugify_key(p.text),
-                title=p.text.strip(),
-                level=level,
-                content=[],
-                subsections=[],
-            )
-            _attach_section(root_sections, stack, new_section, level)
-        else:
-            # Non-heading paragraph → content
-            text = (p.text or "").strip()
-            if not text:
+            if level is not None:
+                # New section
+                new_section = Section(
+                    key=_slugify_key(p.text or ""),
+                    title=(p.text or "").strip(),
+                    level=level,
+                    content=[],
+                    subsections=[],
+                )
+                _attach_section(root_sections, stack, new_section, level)
                 continue
 
+            text = (p.text or "").strip()
+            if not text:
+                # Empty paragraph → skip
+                continue
+
+            # Ensure we have a current section; if not, create a synthetic "Body"
             if not stack:
-                # No heading yet: put into a synthetic top-level section
                 if not root_sections:
                     root = Section(
                         key="body",
@@ -278,17 +310,40 @@ def _build_sections_from_doc(docx: DocxDocument) -> List[Section]:
                     )
                     root_sections.append(root)
                     stack.append(root)
-                current = stack[-1]
-            else:
-                current = stack[-1]
+            current = stack[-1]
 
             blocks = _paragraph_to_blocks(p, docx)
             current.content.extend(blocks)
+            continue
 
-    # NOTE v0: tables are not handled yet. We can add a second pass later that
-    # walks docx.tables and attaches them as ContentBlock(kind="table") to
-    # the nearest preceding section.
+        # -------------------------------------------------------------------
+        # Table handling: attach as ContentBlock(kind="table")
+        # -------------------------------------------------------------------
+        if isinstance(block, DocxTable):
+            tbl = block
+            table_block = _table_to_block(tbl)
+            if table_block is None:
+                # Completely empty table → ignore
+                continue
+
+            # Ensure we have a current section; if not, create a synthetic "Body"
+            if not stack:
+                if not root_sections:
+                    root = Section(
+                        key="body",
+                        title="Body",
+                        level=1,
+                        content=[],
+                        subsections=[],
+                    )
+                    root_sections.append(root)
+                    stack.append(root)
+            current = stack[-1]
+            current.content.append(table_block)
+            continue
+
     return root_sections
+
 
 
 def _attach_section(
@@ -350,6 +405,43 @@ def _paragraph_to_blocks(p: DocxParagraph, docx: DocxDocument) -> List[ContentBl
 
     # 3) Default: body paragraph
     return [ContentBlock(kind="paragraph", text=text)]
+
+
+
+def _table_to_block(tbl: DocxTable) -> Optional[ContentBlock]:
+    """
+    Convert a python-docx Table into a ContentBlock(kind='table').
+
+    - First non-empty row is treated as the header.
+    - Remaining non-empty rows become body rows.
+    - Trailing empty cells/rows are trimmed.
+    """
+    raw_rows: List[List[str]] = []
+
+    for row in tbl.rows:
+        cells: List[str] = []
+        for cell in row.cells:
+            text = (cell.text or "").strip()
+            cells.append(text)
+        # Trim trailing empty cells
+        while cells and not cells[-1]:
+            cells.pop()
+        raw_rows.append(cells)
+
+    # Drop completely empty rows
+    rows = [r for r in raw_rows if any(r)]
+    if not rows:
+        return None
+
+    header = rows[0]
+    body_rows = rows[1:] if len(rows) > 1 else []
+
+    return ContentBlock(
+        kind="table",
+        header=header,
+        rows=body_rows,
+        # caption can be added later if we decide to parse it
+    )
 
 
 
