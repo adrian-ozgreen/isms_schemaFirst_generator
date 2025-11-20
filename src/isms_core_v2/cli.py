@@ -20,6 +20,9 @@ from .models import DocumentModel
 from .renderers.word_renderer import render_document
 from .importers.word_importer import import_word_to_document_dict
 
+#from src.isms_core_v2 import registers  # or from . import registers if cli.py is inside the package
+from . import registers
+
 import json
 
 def _resolve_path(p: str | Path) -> Path:
@@ -99,6 +102,28 @@ def cmd_generate(args: argparse.Namespace) -> int:
     print(f"      Input JSON: {input_path}")
     print(f"      Template:   {template_path}")
     print(f"      Output:     {output_path}")
+
+
+    # After successful generation, optionally update registers
+    if getattr(args, "update_dcr", None):
+        registers.update_document_control_register(
+            register_path=args.update_dcr,
+            model=model,
+            output_path=output_path,
+        )
+        print(f"[INFO] Updated Document Control Register: {args.update_dcr}")
+
+    if getattr(args, "update_mrr", None):
+        registers.update_master_reference_register(
+            register_path=args.update_mrr,
+            model=model,
+        )
+        print(f"[INFO] Updated Master Reference Register: {args.update_mrr}")
+
+
+
+
+
     return 0
 
 
@@ -189,6 +214,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--output",
         required=True,
         help="Path to output .docx file.",
+    )
+    p_generate.add_argument(
+        "--update-dcr",
+        metavar="PATH",
+        type=Path,
+        help="Optional path to Document Control Register CSV to update/create.",
+    )
+
+    p_generate.add_argument(
+        "--update-mrr",
+        metavar="PATH",
+        type=Path,
+        help="Optional path to Master Reference Register CSV to update/create.",
     )
     p_generate.set_defaults(func=cmd_generate)
 

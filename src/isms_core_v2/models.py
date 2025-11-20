@@ -143,3 +143,70 @@ class DocumentModel(BaseModel):
             )
 
         return sections
+
+
+
+# ------------------------------------------------------------
+# Document control + reference register rows
+# ------------------------------------------------------------
+
+class DocumentControlRegisterRow(BaseModel):
+    """
+    One row in the Document Control Register CSV.
+
+    These fields are intentionally close to DocMetadata so we can
+    populate the register directly from a generated DocumentModel.
+    """
+
+    doc_id: str                      # e.g. "REC-PMDS-MINIBUOY-001_v4"
+    title: str                       # Document title
+    doc_type: Literal["Policy", "Procedure", "Record", "Template", "Other"]
+    version: str                     # e.g. "1.0", "0.3-draft"
+    status: Literal["Draft", "For Review", "Approved", "Superseded", "Obsolete"]
+
+    owner: str                       # Primary document owner
+    approver: str | None = None      # Approver for the current version
+
+    confidentiality: str | None = None  # e.g. "Internal – TracWater Only"
+
+    # Dates as ISO strings "YYYY-MM-DD"
+    date_completed: str | None = None
+    next_review_date: str | None = None
+
+    # Where the “live” file is stored
+    file_path: str | None = None        # e.g. "/ISMS/Records/REC-....docx"
+
+    notes: str | None = None            # Free-text remarks (e.g. supersedes X)
+
+
+class ReferenceRegisterEntry(BaseModel):
+    """
+    One row in the Master Reference Register CSV.
+
+    Represents a *single reference* made by one ISMS artefact to
+    another internal artefact or an external standard/website.
+    """
+
+    ref_id: str                            # Unique ID for this reference row, e.g. "REF-000123"
+
+    # Where the reference originates
+    source_doc_id: str                     # e.g. "REC-PMDS-MINIBUOY-001_v4"
+    source_doc_title: str | None = None
+    source_section_key: str | None = None  # e.g. "modbus_map" or "scope"
+
+    # What kind of thing is being referenced
+    ref_type: Literal[
+        "InternalDocument",     # another ISMS artefact
+        "ExternalStandard",     # ISO/AS/NZS/etc.
+        "ExternalWebsite",      # URL
+        "CustomerDocument",     # client-supplied spec/contract
+        "Other",
+    ]
+
+    # Target details (meaning varies slightly by ref_type)
+    target_identifier: str                  # e.g. "ISO/IEC 27001:2022", "POL-IS-001"
+    target_title: str | None = None        # Human-readable title
+    target_version: str | None = None      # Clause version, doc version, etc.
+    target_location: str | None = None     # File path or URL
+
+    notes: str | None = None               # e.g. "Clause 5.1.1", "Section 4.10"
