@@ -5,25 +5,29 @@ Schema-driven renderer:
 - Loads a base ISMS Word template
 - Updates core properties and Document Control table from DocMetadata
 - Appends sections & subsections with appropriate ISMS Heading styles
-- Renders simple content blocks (paragraph, bullet_list, numbered_list)
+- Renders simple content blocks (paragraph, bullet_list, numbered_list, table)
 - Preserves existing Title Page and TOC layout
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, Dict, Callable, Set
+from typing import Iterable, Dict, Callable, Set, List
 
 from docx import Document
 from docx.text.paragraph import Paragraph
 from docx.document import Document as _Document
-from docx.table import _Cell, Table
+from docx.table import Table
 
 from ..models import DocumentModel, Section, ContentBlock, DocMetadata  # adjust import if needed
 
 import re
 
+
+# -------------------------------------------------------------------
 # Placeholder → metadata resolver (all supported placeholders)
+# -------------------------------------------------------------------
+
 PLACEHOLDER_MAP: Dict[str, Callable[[DocMetadata], str]] = {
     "[[DOC_ID]]":               lambda m: m.doc_id,
     "[[DOC_TITLE]]":            lambda m: m.title,
@@ -98,9 +102,6 @@ def _apply_metadata_placeholders(doc: _Document, metadata: DocMetadata) -> None:
                     replace_in_paragraphs(cell.paragraphs)
 
 
-
-
-
 # -------------------------------------------------------------------
 # Style maps and helpers
 # -------------------------------------------------------------------
@@ -162,6 +163,10 @@ def _apply_first_existing_table_style(table: Table, candidates: Iterable[str]) -
     # If none found, leave Word's default table style
 
 
+# -------------------------------------------------------------------
+# Table rendering
+# -------------------------------------------------------------------
+
 def _render_table_block(doc: Document, block: ContentBlock) -> None:
     """
     Render a ContentBlock of kind='table' as a Word table, using the
@@ -187,7 +192,7 @@ def _render_table_block(doc: Document, block: ContentBlock) -> None:
     # Apply table style with fallbacks
     _apply_first_existing_table_style(
         table,
-        ("TracWater table", "ISMS Table", "Table Grid")
+        ("TracWater table", "ISMS Table", "Table Grid"),
     )
 
     current_row = 0
@@ -202,7 +207,7 @@ def _render_table_block(doc: Document, block: ContentBlock) -> None:
             cell.text = value
             # Apply paragraph style if defined
             for p in cell.paragraphs:
-                _apply_first_existing_style(p, ("ISMS Body", "Normal"))
+                _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
         current_row += 1
 
     # Fill body rows
@@ -214,19 +219,18 @@ def _render_table_block(doc: Document, block: ContentBlock) -> None:
             cell = row_cells[idx]
             cell.text = value
             for p in cell.paragraphs:
-                _apply_first_existing_style(p, ("ISMS Body", "Normal"))
+                _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
         current_row += 1
 
     # Optional caption (below table)
     if block.caption:
         caption_para = doc.add_paragraph(block.caption)
-        _apply_first_existing_style(caption_para, ("ISMS Body", "Normal"))
+        _apply_first_existing_style(caption_para, BODY_STYLE_CANDIDATES)
 
 
-
-# ---------------------------------------------------------------------------
-# List normalisation helpers
-# ---------------------------------------------------------------------------
+# -------------------------------------------------------------------
+# List normalisation helpers (for "fake" bullets / numbers in text)
+# -------------------------------------------------------------------
 
 # Matches leading bullet-like characters: •, -, –, *
 _BULLET_PREFIX_RE = re.compile(r"^\s*[•\-–*]\s+")
@@ -272,7 +276,78 @@ def _normalise_block(block: ContentBlock) -> ContentBlock:
     return block
 
 
+# -------------------------------------------------------------------
+# Numbered list grouping (restart at 1 per logical group)
+# -------------------------------------------------------------------
 
+def _render_numbered_list_group(doc: Document, items: List[str]) -> None:
+    """
+    Render a logical numbered list that always starts at 1.
+    Numbers are inserted manually into the text, and the
+    paragraphs use ISMS List Numbered only for indent/spacing.
+
+    NOTE: In the template, ISMS List Numbered should *not* have
+    automatic numbering enabled; it should just define indentation
+    and spacing, so we avoid Word continuing numbering across lists.
+    """
+    number = 1
+    for raw in items:
+        text = (raw or "").strip()
+        if not text:
+            continue
+
+        p = doc.add_paragraph()
+        # Manual "1. " prefix
+        p.add_run(f"{number}. {text}")
+
+        # Apply style for indent/spacing (no auto-numbering in the style)
+        _apply_first_existing_style(p, NUMBERED_STYLE_CANDIDATES)
+
+        number += 1
+
+
+# -------------------------------------------------------------------
+# Simple content rendering helpers (single blocks)
+# -------------------------------------------------------------------
+
+def _add_paragraph_block(doc: Document, block: ContentBlock) -> None:
+    p = doc.add_paragraph(block.text if isinstance(block.text, str) else "")
+    _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
+
+
+def _add_bullet_list_block(doc: Document, block: ContentBlock) -> None:
+    items = block.text if isinstance(block.text, list) else [str(block.text)]
+    for text in items:
+        p = doc.add_paragraph(text or "")
+        _apply_first_existing_style(p, BULLET_STYLE_CANDIDATES)
+
+
+def _render_content_block(doc: Document, block: ContentBlock) -> None:
+    """
+    Render a non-numbered content block (paragraph, bullet_list, table, etc.).
+
+    Numbered lists are handled separately in the section renderer so that
+    we can group them and restart numbering at 1 per logical list.
+    """
+    if block.kind == "paragraph":
+        for line in str(block.text or "").splitlines():
+            if not line.strip():
+                continue
+            p = doc.add_paragraph(line.strip())
+            _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
+
+    elif block.kind == "bullet_list":
+        items = block.text if isinstance(block.text, list) else [str(block.text)]
+        for item in items:
+            p = doc.add_paragraph(str(item or ""))
+            _apply_first_existing_style(p, BULLET_STYLE_CANDIDATES)
+
+    elif block.kind == "table":
+        _render_table_block(doc, block)
+
+    else:
+        # Future-proof: ignore unknown kinds gracefully
+        return
 
 
 # -------------------------------------------------------------------
@@ -355,70 +430,6 @@ def _update_document_control_table(doc: Document, metadata: DocMetadata) -> None
 
 
 # -------------------------------------------------------------------
-# Content rendering
-# -------------------------------------------------------------------
-
-def _add_paragraph_block(doc: Document, block: ContentBlock) -> None:
-    p = doc.add_paragraph(block.text if isinstance(block.text, str) else "")
-    _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
-
-
-def _add_bullet_list_block(doc: Document, block: ContentBlock) -> None:
-    items = block.text if isinstance(block.text, list) else [str(block.text)]
-    for text in items:
-        p = doc.add_paragraph(text or "")
-        _apply_first_existing_style(p, BULLET_STYLE_CANDIDATES)
-
-
-def _add_numbered_list_block(doc: Document, block: ContentBlock) -> None:
-    items = block.text if isinstance(block.text, list) else [str(block.text)]
-    for text in items:
-        p = doc.add_paragraph(text or "")
-        _apply_first_existing_style(p, NUMBERED_STYLE_CANDIDATES)
-
-
-# def _render_content_block(doc: Document, block: ContentBlock) -> None:
-#     if block.kind == "paragraph":
-#         _add_paragraph_block(doc, block)
-#     elif block.kind == "bullet_list":
-#         _add_bullet_list_block(doc, block)
-#     elif block.kind == "numbered_list":
-#         _add_numbered_list_block(doc, block)
-#     else:
-#         # For now we ignore unknown kinds; could log a warning later
-#         _add_paragraph_block(doc, block)
-
-
-def _render_content_block(doc: Document, block: ContentBlock) -> None:
-    if block.kind == "paragraph":
-        for line in str(block.text or "").splitlines():
-            if not line.strip():
-                continue
-            p = doc.add_paragraph(line.strip())
-            _apply_first_existing_style(p, ("ISMS Body", "Normal"))
-
-    elif block.kind == "bullet_list":
-        for item in block.text or []:
-            p = doc.add_paragraph(str(item or ""))
-            _apply_first_existing_style(p, BULLET_STYLE_CANDIDATES)
-
-    elif block.kind == "numbered_list":
-        for item in block.text or []:
-            p = doc.add_paragraph(str(item or ""))
-            _apply_first_existing_style(p, NUMBERED_STYLE_CANDIDATES)
-
-    elif block.kind == "table":
-        _render_table_block(doc, block)
-
-    else:
-        # Future-proof: ignore unknown kinds gracefully
-        return
-
-
-
-
-
-# -------------------------------------------------------------------
 # Section rendering
 # -------------------------------------------------------------------
 
@@ -435,16 +446,43 @@ def _add_section_heading(doc: Document, section: Section) -> Paragraph:
 def _render_section_recursive(doc: Document, section: Section) -> None:
     """
     Render a section heading + content + all subsections, appended at the end of the document.
+
+    Numbered lists are grouped so that each logical list (a run of numbered_list
+    blocks with no interruption) restarts at 1.
     """
     # Append heading
     _add_section_heading(doc, section)
 
+    numbered_buffer: List[str] = []
+
+    def flush_numbered() -> None:
+        nonlocal numbered_buffer
+        if numbered_buffer:
+            _render_numbered_list_group(doc, numbered_buffer)
+            numbered_buffer = []
+
     # Append content blocks
-    for block in section.content:
+    for raw_block in section.content:
         # Auto-detect fake bullets/numbered items and normalise them
-        block = _normalise_block(block)
+        block = _normalise_block(raw_block)
+
+        if block.kind == "numbered_list":
+            # Normalise block.text into a list[str]
+            if isinstance(block.text, list):
+                items = [str(t).strip() for t in block.text if str(t).strip()]
+            else:
+                txt = str(block.text or "").strip()
+                items = [txt] if txt else []
+            numbered_buffer.extend(items)
+            # Do not render yet; wait to see if the list continues
+            continue
+
+        # If we hit a non-numbered block, flush any pending list
+        flush_numbered()
         _render_content_block(doc, block)
 
+    # End of section content: flush any trailing numbered list
+    flush_numbered()
 
     # Render subsections after content
     for sub in section.subsections:
