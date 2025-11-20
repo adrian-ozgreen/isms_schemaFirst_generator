@@ -18,11 +18,13 @@ from pydantic import ValidationError
 
 from .models import DocumentModel
 from .renderers.word_renderer import render_document
+from .importers.word_importer import import_word_to_document_dict
 
 import json
 
 def _resolve_path(p: str | Path) -> Path:
     return Path(p).expanduser().resolve()
+
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
@@ -100,6 +102,50 @@ def cmd_generate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_import_word(args: argparse.Namespace) -> int:
+    """
+    Import a Word document and convert it into JSON compatible with DocumentModel.
+    """
+    input_path = _resolve_path(args.input)
+    output_path = _resolve_path(args.output)
+
+    if not input_path.is_file():
+        print(f"[ERROR] Input Word document not found: {input_path}", file=sys.stderr)
+        return 1
+
+    try:
+        doc_dict = import_word_to_document_dict(
+            path=input_path,
+            doc_type=args.doc_type,
+            default_doc_id=args.doc_id,
+        )
+        # Optional: soft validation
+        try:
+            _ = DocumentModel.model_validate(doc_dict)
+            print("[OK] Imported document validates against DocumentModel.")
+        except ValidationError as e:
+            print("[WARN] Imported document did not fully validate:", file=sys.stderr)
+            print(e, file=sys.stderr)
+    except Exception as e:
+        print("[ERROR] Failed to import Word document:", file=sys.stderr)
+        print(e, file=sys.stderr)
+        return 2
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with output_path.open("w", encoding="utf-8") as f:
+            json.dump(doc_dict, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print("[ERROR] Failed to write output JSON:", file=sys.stderr)
+        print(e, file=sys.stderr)
+        return 3
+
+    print(f"[INFO] Wrote imported JSON to: {output_path}")
+    return 0
+
+
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="isms_core_v2",
@@ -146,6 +192,31 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_generate.set_defaults(func=cmd_generate)
 
+    # import-word
+    p_import = subparsers.add_parser(
+        "import-word",
+        help="Import a Word document and produce a JSON file for the generator.",
+    )
+    p_import.add_argument(
+        "input",
+        help="Path to input Word document (.docx).",
+    )
+    p_import.add_argument(
+        "output",
+        help="Path to output JSON file.",
+    )
+    p_import.add_argument(
+        "--doc-type",
+        default="Record",
+        help="ISMS document type (e.g. Record, Policy, Procedure). Defaults to Record.",
+    )
+    p_import.add_argument(
+        "--doc-id",
+        default="REC-UNKNOWN-000",
+        help="DocID to use if not derivable from the Word file.",
+    )
+    p_import.set_defaults(func=cmd_import_word)
+    
     return parser
 
 
