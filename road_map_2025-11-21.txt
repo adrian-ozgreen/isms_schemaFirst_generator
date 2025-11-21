@@ -17,10 +17,13 @@ This is already more automation than many ISO 27001–certified companies ever a
 
 
 
-Dropbox integration
+Dropbox integration -- done
+
+Method 1 -- template per document type (e.g. policy, procedure or record) to attach to ChatGPT prompt when asking to generate an ISMS document.
 
 
 🔧 Optional Next Enhancements
+Make the registers databases, not CSV files!
 
 Auto-generate change summaries for the DCR (diff-style)
 

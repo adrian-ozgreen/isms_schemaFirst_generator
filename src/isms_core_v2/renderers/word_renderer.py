@@ -259,20 +259,30 @@ def _render_runs_paragraph(
     p = doc.add_paragraph()
     _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
 
+
     for frag in runs:
         if frag is None:
             continue
-        text = frag.get("text") or ""
+
+        # Handle both dict and RunFragment model
+        if isinstance(frag, dict):
+            text = frag.get("text") or ""
+            bold = bool(frag.get("bold"))
+            italic = bool(frag.get("italic"))
+            underline = bool(frag.get("underline"))
+            href = frag.get("hyperlink")
+        else:
+            # Pydantic RunFragment model or any object with attributes
+            text = getattr(frag, "text", "") or ""
+            bold = bool(getattr(frag, "bold", False))
+            italic = bool(getattr(frag, "italic", False))
+            underline = bool(getattr(frag, "underline", False))
+            href = getattr(frag, "hyperlink", None)
+
         if not text:
             continue
 
-        bold = bool(frag.get("bold"))
-        italic = bool(frag.get("italic"))
-        underline = bool(frag.get("underline"))
-        href = frag.get("hyperlink")
-
         if href:
-            # Hyperlink run (blue + underlined by default)
             _add_hyperlink_run(
                 paragraph=p,
                 url=str(href),
@@ -282,13 +292,11 @@ def _render_runs_paragraph(
                 underline=underline or True,
             )
         else:
-            # Normal run
             run = p.add_run(text)
             run.bold = bold
             run.italic = italic
             run.underline = underline
 
-    return p
 
 
 

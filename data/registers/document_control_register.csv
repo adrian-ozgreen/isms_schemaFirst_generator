@@ -1,2 +1,2 @@
 doc_id,title,doc_type,version,status,owner,approver,confidentiality,date_completed,next_review_date,file_path,notes
-REC-PMDS-MINIBUOY-001_v4,Product model data specification,Record,0.1,Draft,TBD,None,Internal – TracWater Only,,,C:\py\isms_hybrid_schema_v1\outputs\REC-PMDS-MINIBUOY-from-importer-v2.docx,None
+REC-PMDS-MINIBUOY-001_v4,product_model_data_specifications_v2,Record,0.1,Draft,TBC,None,None,None,None,C:\py\isms_hybrid_schema_v1\outputs\REC-PMDS-MINIBUOY-from-importer-v2.docx,None
