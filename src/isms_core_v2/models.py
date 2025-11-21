@@ -1,7 +1,7 @@
 # src/isms_core_v2/models.py
 
 from __future__ import annotations
-from typing import List, Literal, ClassVar, Set
+from typing import Optional, List, Literal, ClassVar, Set
 from pydantic import BaseModel, Field, validator
 
 
@@ -9,8 +9,24 @@ from pydantic import BaseModel, Field, validator
 # Content blocks: paragraphs, bullet lists, numbered lists
 # ------------------------------------------------------------
 
+class RunFragment(BaseModel):
+    """
+    Represents a fragment of text within a paragraph, with inline formatting.
+    This is what we use to preserve bold/italic/underline and hyperlinks
+    from the source Word document.
+    """
+    text: str
+    bold: bool = False
+    italic: bool = False
+    underline: bool = False
+    hyperlink: str | None = None
+
 class ContentBlock(BaseModel):
     kind: Literal["paragraph", "bullet_list", "numbered_list", "table"]
+
+    # For paragraph: can use rich runs instead of (or as well as) plain text.
+    # For bullet / numbered list, we still expect text.
+    runs: List[RunFragment] | None = None
 
     # For paragraph / bullet / numbered list
     text: str | List[str] | None = None
@@ -20,12 +36,37 @@ class ContentBlock(BaseModel):
     rows: List[List[str]] | None = None    # Body rows
     caption: str | None = None             # Optional caption
 
+    @validator("runs", always=True)
+    def validate_runs_for_paragraph_only(cls, v, values):
+        """
+        Only paragraphs are allowed to have runs. For other kinds, runs must
+        be absent or empty.
+        """
+        kind = values.get("kind")
+        if kind != "paragraph" and v:
+            raise ValueError("'runs' is only supported for kind=paragraph")
+        return v
+
     @validator("text", always=True)
     def validate_text_for_non_table(cls, v, values):
+        """
+        - paragraph: must have either text or runs (or both)
+        - bullet_list / numbered_list: must have text (same as before)
+        - table: no requirement on text
+        """
         kind = values.get("kind")
-        if kind in ("paragraph", "bullet_list", "numbered_list"):
+        runs = values.get("runs")
+
+        if kind == "paragraph":
+            # Paragraphs are valid if they have either text or runs
+            if v is None and not runs:
+                raise ValueError("'text' or 'runs' is required for kind=paragraph")
+
+        elif kind in ("bullet_list", "numbered_list"):
+            # Lists still require text as before
             if v is None:
                 raise ValueError(f"'text' is required for kind={kind}")
+
         return v
 
     @validator("rows", always=True)
@@ -35,6 +76,8 @@ class ContentBlock(BaseModel):
             if v is None or len(v) == 0:
                 raise ValueError("'rows' is required and must be non-empty for kind=table")
         return v
+
+
 
 
 # ------------------------------------------------------------

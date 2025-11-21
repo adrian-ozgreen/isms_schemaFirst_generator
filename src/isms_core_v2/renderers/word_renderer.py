@@ -12,12 +12,16 @@ Schema-driven renderer:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, Dict, Callable, Set, List
+from typing import Iterable, Dict, Callable, Set, List, Sequence, Any
 
 from docx import Document
 from docx.text.paragraph import Paragraph
 from docx.document import Document as _Document
 from docx.table import Table
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.opc.constants import RELATIONSHIP_TYPE
+
 
 from ..models import DocumentModel, Section, ContentBlock, DocMetadata  # adjust import if needed
 
@@ -161,6 +165,133 @@ def _apply_first_existing_table_style(table: Table, candidates: Iterable[str]) -
         except KeyError:
             continue
     # If none found, leave Word's default table style
+
+
+
+def _add_hyperlink_run(
+    paragraph: Paragraph,
+    url: str,
+    text: str,
+    bold: bool = False,
+    italic: bool = False,
+    underline: bool = True,
+) -> None:
+    """
+    Add a single hyperlink run (blue + underlined by default) to the paragraph,
+    with optional bold/italic flags.
+
+    This uses low-level XML because python-docx does not expose hyperlink runs
+    directly.
+    """
+    if not text:
+        return
+
+    part = paragraph.part
+    # Create a relationship id for this external hyperlink
+    r_id = part.relate_to(
+        url,
+        RELATIONSHIP_TYPE.HYPERLINK,
+        is_external=True,
+    )
+
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("r:id"), r_id)
+
+    # Create the run
+    new_run = OxmlElement("w:r")
+    r_pr = OxmlElement("w:rPr")
+
+    # Bold
+    if bold:
+        b = OxmlElement("w:b")
+        b.set(qn("w:val"), "true")
+        r_pr.append(b)
+
+    # Italic
+    if italic:
+        i = OxmlElement("w:i")
+        i.set(qn("w:val"), "true")
+        r_pr.append(i)
+
+    # Underline
+    if underline:
+        u = OxmlElement("w:u")
+        u.set(qn("w:val"), "single")
+        r_pr.append(u)
+
+    # Blue colour
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), "0000FF")
+    r_pr.append(color)
+
+    new_run.append(r_pr)
+
+    # Text node
+    t = OxmlElement("w:t")
+    t.text = text
+    new_run.append(t)
+
+    hyperlink.append(new_run)
+    paragraph._p.append(hyperlink)
+
+
+
+
+
+def _render_runs_paragraph(
+    doc: Document,
+    runs: Sequence[Dict[str, Any]],
+) -> Paragraph:
+    """
+    Render a paragraph from a sequence of run fragments of the form:
+
+        {
+          "text": str,
+          "bold": bool,
+          "italic": bool,
+          "underline": bool,
+          "hyperlink": str | None
+        }
+
+    This is the runtime counterpart to the importer that captured run-level
+    formatting from the source .docx.
+    """
+    p = doc.add_paragraph()
+    _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
+
+    for frag in runs:
+        if frag is None:
+            continue
+        text = frag.get("text") or ""
+        if not text:
+            continue
+
+        bold = bool(frag.get("bold"))
+        italic = bool(frag.get("italic"))
+        underline = bool(frag.get("underline"))
+        href = frag.get("hyperlink")
+
+        if href:
+            # Hyperlink run (blue + underlined by default)
+            _add_hyperlink_run(
+                paragraph=p,
+                url=str(href),
+                text=text,
+                bold=bold,
+                italic=italic,
+                underline=underline or True,
+            )
+        else:
+            # Normal run
+            run = p.add_run(text)
+            run.bold = bold
+            run.italic = italic
+            run.underline = underline
+
+    return p
+
+
+
 
 
 # -------------------------------------------------------------------
@@ -330,11 +461,18 @@ def _render_content_block(doc: Document, block: ContentBlock) -> None:
     we can group them and restart numbering at 1 per logical list.
     """
     if block.kind == "paragraph":
-        for line in str(block.text or "").splitlines():
-            if not line.strip():
-                continue
-            p = doc.add_paragraph(line.strip())
-            _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
+        # Prefer rich run-based rendering if available
+        runs = getattr(block, "runs", None)
+        if runs:
+            # One rich paragraph from run fragments
+            _render_runs_paragraph(doc, runs)
+        else:
+            # Backwards-compatible plain-text rendering
+            for line in str(block.text or "").splitlines():
+                if not line.strip():
+                    continue
+                p = doc.add_paragraph(line.strip())
+                _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
 
     elif block.kind == "bullet_list":
         items = block.text if isinstance(block.text, list) else [str(block.text)]
