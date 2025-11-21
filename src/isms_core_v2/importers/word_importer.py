@@ -40,6 +40,7 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import re  # ← NEW
 
 from docx import Document
 from docx.text.paragraph import Paragraph
@@ -140,31 +141,112 @@ def _paragraph_to_block(paragraph: Paragraph) -> Optional[Dict[str, Any]]:
 
 
 
+def _get_heading_level(paragraph: Paragraph) -> Optional[int]:
+    """
+    Return a heading level (1–4) if the paragraph uses a Heading style,
+    otherwise None.
+
+    This looks for built-in Word styles like 'Heading 1', 'Heading 2', etc.
+    """
+    style = getattr(paragraph, "style", None)
+    name = getattr(style, "name", "") or ""
+    name_lower = name.lower()
+
+    # Match "Heading 1", "Heading 2", "heading 3", etc.
+    m = re.match(r"heading\s+([1-4])", name_lower)
+    if m:
+        return int(m.group(1))
+
+    # You can extend this later with custom style names if needed
+    return None
+
+
+def _slugify(text: str) -> str:
+    """
+    Turn a heading title into a safe section key, e.g.:
+    'Raw Data Specification' → 'raw_data_specification'.
+    """
+    base = re.sub(r"[^a-zA-Z0-9]+", "_", text.strip().lower()).strip("_")
+    return base or "section"
+
+
+
+
+
+
+
 def _import_body_as_single_section(doc: Document, title: str) -> Dict[str, Any]:
     """
-    Very simple sectioning: create a single top-level section that contains
-    all paragraph content blocks in document order.
+    Import the main body of the document into a single top-level section
+    ('record_content'), but use Word Heading styles to create nested
+    subsections inside it.
 
-    This keeps the example small and focused on run formatting. If you already
-    have heading-based section splitting in your existing importer, you can
-    keep that logic and only replace the *paragraph-to-block* part with
-    `_paragraph_to_block`.
+    Behaviour:
+
+    - Paragraphs with style 'Heading 1'–'Heading 4' become Section objects
+      with level 1–4 (clamped to 1–4).
+    - Content paragraphs are converted to ContentBlock objects (with runs)
+      and attached to the most recent section at the appropriate level.
+    - Paragraphs that appear before the first heading are added directly
+      to record_content.content.
     """
-    content_blocks: List[Dict[str, Any]] = []
-
-    for paragraph in doc.paragraphs:
-        block = _paragraph_to_block(paragraph)
-        if block is not None:
-            content_blocks.append(block)
-
-    section = {
+    # Top-level catch-all section that the ISMS generator expects
+    main_section: Dict[str, Any] = {
         "key": "record_content",
         "title": title or "Record Content",
         "level": 1,
-        "content": content_blocks,
+        "content": [],
         "subsections": [],
     }
-    return section
+
+    # section_stack[i] is the most recent section at level i.
+    # Index 0 is the top-level record_content.
+    section_stack: List[Dict[str, Any]] = [main_section]
+
+    for paragraph in doc.paragraphs:
+        heading_level = _get_heading_level(paragraph)
+
+        if heading_level is not None:
+            # Convert Word Heading N → ISMS Level N+1 (max Level 5)
+            lvl = heading_level + 1
+            if lvl > 5:
+                lvl = 5
+
+            text = (paragraph.text or "").strip()
+            if not text:
+                continue
+
+            key = _slugify(text)
+
+            new_section: Dict[str, Any] = {
+                "key": key,
+                "title": text,
+                "level": lvl,
+                "content": [],
+                "subsections": [],
+            }
+
+            # Ensure the stack length matches the *parent* level:
+            # parent of level N is level N-1
+            while len(section_stack) > (lvl - 1):
+                section_stack.pop()
+
+            parent = section_stack[-1]
+            parent.setdefault("subsections", []).append(new_section)
+            section_stack.append(new_section)
+
+            # Don't add the heading itself as a content block
+            continue
+
+
+        # Not a heading: treat as body content under the current section
+        block = _paragraph_to_block(paragraph)
+        if block is not None:
+            current_section = section_stack[-1]
+            current_section.setdefault("content", []).append(block)
+
+    return main_section
+
 
 
 # ---------------------------------------------------------------------------

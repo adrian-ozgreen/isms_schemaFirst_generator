@@ -88,15 +88,15 @@ class ContentBlock(BaseModel):
 class Section(BaseModel):
     key: str
     title: str
-    level: int = 1
+    level: int = Field(ge=1, le=5)
     content: List[ContentBlock] = Field(default_factory=list)
     subsections: List["Section"] = Field(default_factory=list)
 
-    @validator("level")
-    def level_must_be_between_1_and_4(cls, v):
-        if v < 1 or v > 4:
-            raise ValueError("Section.level must be between 1 and 4")
-        return v
+    #@validator("level")
+    #def level_must_be_between_1_and_5(cls, v):
+    #    if v < 1 or v > 5:
+    #        raise ValueError("Section.level must be between 1 and 5")
+    #    return v
 
     @validator("subsections")
     def enforce_subsection_levels(cls, subs, values):

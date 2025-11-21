@@ -16,9 +16,13 @@ Validate JSON
 python -m src.isms_core_v2.cli validate --input data/sample/v2/pmds_from_importer.json
 
 
-Generate the ISMS Word document from the JSON file
+Generate the ISMS Word document from the JSON file with Dropbox integration
 python -m src.isms_core_v2.cli generate --input data/sample/v2/pmds_from_importer.json --template data/templates/ISMS_MASTER_BASE.docx --output outputs/REC-PMDS-MINIBUOY-from-importer-v2.docx --update-dcr data/registers/document_control_register.csv --update-mrr data/registers/master_reference_register.csv --dropbox-root "$env:DBX_ROOT"
 
+
+
+
+python -m src.isms_core_v2.cli generate --input data/sample/v2/pmds_from_importer.json --template data/templates/ISMS_MASTER_BASE.docx --output outputs/REC-PMDS-MINIBUOY-from-importer-v2.docx --update-dcr data/registers/document_control_register.csv --update-mrr data/registers/master_reference_register.csv --dropbox-root "$env:DBX_ROOT"
 
 
 

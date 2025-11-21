@@ -116,6 +116,8 @@ HEADING_STYLE_MAP: dict[int, tuple[str, ...]] = {
     2: ("ISMS Heading 2", "Heading 2"),
     3: ("ISMS Heading 3", "Heading 3"),
     4: ("ISMS Heading 4", "Heading 4"),
+    # Reuse the smallest heading style for deepest level
+    5: ("ISMS Heading 4", "Heading 4"),
 }
 
 # Body and list style fallbacks
