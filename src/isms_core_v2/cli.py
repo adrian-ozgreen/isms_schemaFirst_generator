@@ -22,6 +22,7 @@ from .importers.word_importer import import_word_to_document_dict
 
 #from src.isms_core_v2 import registers  # or from . import registers if cli.py is inside the package
 from . import registers
+from . import dropbox_io
 
 import json
 
@@ -120,9 +121,25 @@ def cmd_generate(args: argparse.Namespace) -> int:
         )
         print(f"[INFO] Updated Master Reference Register: {args.update_mrr}")
 
+    # Dropbox integration (v0)
+    if getattr(args, "dropbox_root", None):
+        dropbox_root: Path = args.dropbox_root
 
+        # 1) Copy generated document into ISMS tree
+        dbx_doc_path = dropbox_io.copy_generated_document_to_dropbox(
+            dropbox_root=dropbox_root,
+            model=model,
+            local_output_path=output_path,
+        )
+        print(f"[INFO] Copied generated document to Dropbox: {dbx_doc_path}")
 
-
+        # 2) Copy JSON input into 90_Imports (optional but useful)
+        dropbox_io.copy_inputs_to_dropbox(
+            dropbox_root=dropbox_root,
+            json_input_path=input_path,
+            source_word_path=None,  # We'll wire this later for import-word flows
+        )
+        print(f"[INFO] Copied JSON input into Dropbox imports folder")
 
     return 0
 
@@ -227,6 +244,15 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         type=Path,
         help="Optional path to Master Reference Register CSV to update/create.",
+    )
+    p_generate.add_argument(
+        "--dropbox-root",
+        metavar="PATH",
+        type=Path,
+        help=(
+            "Optional Dropbox root folder. If provided, the generated document "
+            "and JSON input will be copied into the ISMS structure under this root."
+        ),
     )
     p_generate.set_defaults(func=cmd_generate)
 
