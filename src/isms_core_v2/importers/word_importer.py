@@ -44,6 +44,7 @@ import re  # ← NEW
 
 from docx import Document
 from docx.text.paragraph import Paragraph
+from docx.table import Table
 from docx.oxml.ns import qn
 
 
@@ -117,23 +118,72 @@ def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
 # Content-block helpers
 # ---------------------------------------------------------------------------
 
+def _detect_list_kind(paragraph: Paragraph) -> Optional[str]:
+    """
+    Best-effort detection of bullet vs numbered lists.
+
+    Strategy:
+    - Look at the style name (e.g. 'List Bullet', 'ISMS List Numbered').
+    - If that fails, fall back to checking Word's numbering XML (w:numPr).
+    """
+    style = getattr(paragraph, "style", None)
+    name = getattr(style, "name", "") or ""
+    name_lower = name.lower()
+
+    # 1) Style-based detection (works for 'List Bullet', 'ISMS List Bullet', etc.)
+    if "bullet" in name_lower:
+        return "bullet_list"
+    if "number" in name_lower:
+        return "numbered_list"
+
+    # Treat generic 'List Paragraph' as bullet list
+    if "list paragraph" in name_lower:
+        return "bullet_list"
+
+    # 2) Fallback: if the paragraph participates in a Word list
+    p_elm = paragraph._p  # CT_P
+    if p_elm is not None:
+        num_pr = p_elm.find(".//w:numPr", p_elm.nsmap)
+        if num_pr is not None:
+            # If you want *all* lists to become bullet lists, change to "bullet_list"
+            return "bullet_list"
+
+    return None
+
+
+
+
+
+
 def _paragraph_to_block(paragraph: Paragraph) -> Optional[Dict[str, Any]]:
     """
     Convert a paragraph to a JSON content block.
 
     - Skips completely empty paragraphs.
-    - Preserves both plain text and rich runs (with hyperlink, bold, etc.).
+    - Detects bullet/numbered list items and emits 'bullet_list' /
+      'numbered_list' blocks so the renderer can map them to ISMS list styles.
+    - Otherwise, preserves both plain text and rich runs (with hyperlink, bold, etc.).
     """
-    # Plain text (for backwards compatibility and search)
     plain_text = paragraph.text or ""
     if not plain_text.strip():
         # Completely empty paragraph; usually we can skip
         return None
 
+    # 1) First, see if this paragraph is a list item
+    list_kind = _detect_list_kind(paragraph)
+    if list_kind is not None:
+        # Each paragraph becomes a single list item
+        # Renderer will group consecutive items and restart numbering as needed.
+        return {
+            "kind": list_kind,        # "bullet_list" or "numbered_list"
+            "text": [plain_text],     # list of items
+        }
+
+    # 2) Otherwise, treat as a normal paragraph with rich runs
     runs = extract_runs_with_hyperlinks(paragraph)
 
     block: Dict[str, Any] = {
-        "kind": "paragraph",   # ← IMPORTANT: was "type": "paragraph"
+        "kind": "paragraph",
         "text": plain_text,
         "runs": runs,
     }
@@ -141,24 +191,84 @@ def _paragraph_to_block(paragraph: Paragraph) -> Optional[Dict[str, Any]]:
 
 
 
+
+
+def _table_to_block(table: Table) -> Dict[str, Any]:
+    """
+    Convert a Word table into a 'table' content block.
+
+    Structure matches what word_renderer._render_table_block expects:
+      - block.header: List[str] for the header row
+      - block.rows:   List[List[str]] for data rows
+    """
+    rows_data: List[List[str]] = []
+
+    for row in table.rows:
+        row_cells: List[str] = []
+        for cell in row.cells:
+            # Join all paragraph texts in the cell with line breaks
+            texts = [
+                (p.text or "").strip()
+                for p in cell.paragraphs
+                if (p.text or "").strip()
+            ]
+            row_cells.append("\n".join(texts))
+        rows_data.append(row_cells)
+
+    header: List[str] = rows_data[0] if rows_data else []
+    body_rows: List[List[str]] = rows_data[1:] if len(rows_data) > 1 else []
+
+    return {
+        "kind": "table",
+        "header": header,
+        "rows": body_rows,
+    }
+
+
+
+
+def _iter_block_items(doc: Document):
+    """
+    Yield top-level block items (Paragraph or Table) from the document body
+    in order.
+
+    This is the standard python-docx pattern for iterating mixed content.
+    """
+    body = doc.element.body
+    for child in body.iterchildren():
+        if child.tag == qn("w:p"):
+            yield Paragraph(child, doc)
+        elif child.tag == qn("w:tbl"):
+            yield Table(child, doc)
+
+
+
+
+
+
+
 def _get_heading_level(paragraph: Paragraph) -> Optional[int]:
     """
-    Return a heading level (1–4) if the paragraph uses a Heading style,
+    Return a heading level (1–5) if the paragraph uses a Heading style,
     otherwise None.
 
-    This looks for built-in Word styles like 'Heading 1', 'Heading 2', etc.
+    Recognises both built-in 'Heading N' and custom 'ISMS Heading N'.
     """
     style = getattr(paragraph, "style", None)
     name = getattr(style, "name", "") or ""
     name_lower = name.lower()
 
-    # Match "Heading 1", "Heading 2", "heading 3", etc.
-    m = re.match(r"heading\s+([1-4])", name_lower)
-    if m:
-        return int(m.group(1))
+    # Accept any style whose name contains "heading <n>", e.g.:
+    #   "Heading 1"
+    #   "ISMS Heading 2"
+    #   "My Custom Heading 3"
+    for lvl in range(1, 6):
+        token = f"heading {lvl}"
+        if token in name_lower:
+            return lvl
 
-    # You can extend this later with custom style names if needed
     return None
+
 
 
 def _slugify(text: str) -> str:
@@ -178,18 +288,14 @@ def _slugify(text: str) -> str:
 def _import_body_as_single_section(doc: Document, title: str) -> Dict[str, Any]:
     """
     Import the main body of the document into a single top-level section
-    ('record_content'), but use Word Heading styles to create nested
-    subsections inside it.
+    ('record_content'), but:
 
-    Behaviour:
-
-    - Paragraphs with style 'Heading 1'–'Heading 4' become Section objects
-      with level 1–4 (clamped to 1–4).
-    - Content paragraphs are converted to ContentBlock objects (with runs)
-      and attached to the most recent section at the appropriate level.
-    - Paragraphs that appear before the first heading are added directly
-      to record_content.content.
+      - Use Word Heading styles (Heading N / ISMS Heading N) to create
+        nested subsections inside it.
+      - Preserve bullet / numbered lists via _paragraph_to_block().
+      - Preserve tables via _table_to_block().
     """
+
     # Top-level catch-all section that the ISMS generator expects
     main_section: Dict[str, Any] = {
         "key": "record_content",
@@ -203,49 +309,69 @@ def _import_body_as_single_section(doc: Document, title: str) -> Dict[str, Any]:
     # Index 0 is the top-level record_content.
     section_stack: List[Dict[str, Any]] = [main_section]
 
-    for paragraph in doc.paragraphs:
-        heading_level = _get_heading_level(paragraph)
+    for item in _iter_block_items(doc):
+        # ------------------------------------------------------
+        # 1. Paragraphs: check if they are headings; otherwise
+        #    treat as normal content (including lists).
+        # ------------------------------------------------------
+        if isinstance(item, Paragraph):
+            heading_level = _get_heading_level(item)
 
-        if heading_level is not None:
-            # Convert Word Heading N → ISMS Level N+1 (max Level 5)
-            lvl = heading_level + 1
-            if lvl > 5:
-                lvl = 5
+            if heading_level is not None:
+                # Convert Word Heading N → ISMS tree level N+1 (max level 5)
+                lvl = heading_level + 1
+                if lvl > 5:
+                    lvl = 5
 
-            text = (paragraph.text or "").strip()
-            if not text:
+                text = (item.text or "").strip()
+                if not text:
+                    continue
+
+                key = _slugify(text)
+
+                new_section: Dict[str, Any] = {
+                    "key": key,
+                    "title": text,
+                    "level": lvl,
+                    "content": [],
+                    "subsections": [],
+                }
+
+                # Ensure the stack length matches the *parent* level:
+                # parent of level N is level N-1
+                while len(section_stack) > (lvl - 1):
+                    section_stack.pop()
+
+                parent = section_stack[-1]
+                parent.setdefault("subsections", []).append(new_section)
+                section_stack.append(new_section)
+
+                # Don’t add the heading itself as a content block
                 continue
 
-            key = _slugify(text)
+            # Not a heading: treat as body content under the current section
+            block = _paragraph_to_block(item)
 
-            new_section: Dict[str, Any] = {
-                "key": key,
-                "title": text,
-                "level": lvl,
-                "content": [],
-                "subsections": [],
-            }
+        # ------------------------------------------------------
+        # 2. Tables → table ContentBlocks
+        # ------------------------------------------------------
+        elif isinstance(item, Table):
+            block = _table_to_block(item)
 
-            # Ensure the stack length matches the *parent* level:
-            # parent of level N is level N-1
-            while len(section_stack) > (lvl - 1):
-                section_stack.pop()
+        else:
+            block = None
 
-            parent = section_stack[-1]
-            parent.setdefault("subsections", []).append(new_section)
-            section_stack.append(new_section)
-
-            # Don't add the heading itself as a content block
-            continue
-
-
-        # Not a heading: treat as body content under the current section
-        block = _paragraph_to_block(paragraph)
+        # Attach any content block (paragraph / list / table) to
+        # the current (deepest) section.
         if block is not None:
             current_section = section_stack[-1]
             current_section.setdefault("content", []).append(block)
 
     return main_section
+
+
+
+
 
 
 

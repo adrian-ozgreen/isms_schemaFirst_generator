@@ -243,7 +243,9 @@ def _add_hyperlink_run(
 def _render_runs_paragraph(
     doc: Document,
     runs: Sequence[Dict[str, Any]],
+    style_candidates=BODY_STYLE_CANDIDATES
 ) -> Paragraph:
+
     """
     Render a paragraph from a sequence of run fragments of the form:
 
@@ -259,8 +261,10 @@ def _render_runs_paragraph(
     formatting from the source .docx.
     """
     p = doc.add_paragraph()
-    _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
+    _apply_first_existing_style(p, style_candidates)
 
+    if not runs:
+        return p
 
     for frag in runs:
         if frag is None:
@@ -470,32 +474,31 @@ def _render_content_block(doc: Document, block: ContentBlock) -> None:
     Numbered lists are handled separately in the section renderer so that
     we can group them and restart numbering at 1 per logical list.
     """
+    # Paragraphs: prefer rich runs if available, else fall back to plain text
     if block.kind == "paragraph":
-        # Prefer rich run-based rendering if available
         runs = getattr(block, "runs", None)
         if runs:
-            # One rich paragraph from run fragments
-            _render_runs_paragraph(doc, runs)
+            _render_runs_paragraph(doc, runs, BODY_STYLE_CANDIDATES)
         else:
-            # Backwards-compatible plain-text rendering
-            for line in str(block.text or "").splitlines():
-                if not line.strip():
-                    continue
-                p = doc.add_paragraph(line.strip())
-                _apply_first_existing_style(p, BODY_STYLE_CANDIDATES)
+            _add_paragraph_block(doc, block)
 
+    # Bullets: use the existing list helper; importer populates text items
     elif block.kind == "bullet_list":
-        items = block.text if isinstance(block.text, list) else [str(block.text)]
-        for item in items:
-            p = doc.add_paragraph(str(item or ""))
-            _apply_first_existing_style(p, BULLET_STYLE_CANDIDATES)
+        _add_bullet_list_block(doc, block)
 
+    # Tables: render via table helper
     elif block.kind == "table":
         _render_table_block(doc, block)
+
+    # Numbered lists are rendered via _render_section_recursive/_render_numbered_list_group,
+    # so we don't handle them here.
+    elif block.kind == "numbered_list":
+        return
 
     else:
         # Future-proof: ignore unknown kinds gracefully
         return
+
 
 
 # -------------------------------------------------------------------
@@ -534,6 +537,8 @@ DOC_CONTROL_LABEL_ALIASES: dict[str, set[str]] = {
     "version": {"version", "rev", "revision"},
     "owner": {"owner", "documentowner", "docowner", "documentownername"},
     "status": {"status", "documentstatus", "docstatus", "approvalstatus"},
+    # NEW: map Document Type row
+    "doc_type": {"documenttype", "doctype"},
 }
 
 
@@ -546,6 +551,8 @@ def _get_metadata_value(metadata: DocMetadata, key: str) -> str:
         return metadata.owner
     if key == "status":
         return metadata.status
+    if key == "doc_type":            # ← NEW
+        return metadata.doc_type
     return ""
 
 

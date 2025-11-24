@@ -8,21 +8,23 @@ $env:DBX_ROOT="C:/Users/AdrianSalcedo/OzGreen Team Dropbox/ISMS"
 
 Method 1 - create ISMS document as a JSON file.
 
-Method 2 - convert an existing Word document into a JSON file.
+Method 2 - 
+STEP 1 OF 3
+convert an existing Word document into a JSON file.
 python -m src.isms_core_v2.cli import-word data/source_doc/product_model_data_specifications_v2.docx data/sample/v2/pmds_from_importer.json --doc-type Record --doc-id REC-PMDS-MINIBUOY-001_v4
 
-
+STEP 2 OF 3
 Validate JSON
 python -m src.isms_core_v2.cli validate --input data/sample/v2/pmds_from_importer.json
 
-
+STEP 3 OF 3
 Generate the ISMS Word document from the JSON file with Dropbox integration
 python -m src.isms_core_v2.cli generate --input data/sample/v2/pmds_from_importer.json --template data/templates/ISMS_MASTER_BASE.docx --output outputs/REC-PMDS-MINIBUOY-from-importer-v2.docx --update-dcr data/registers/document_control_register.csv --update-mrr data/registers/master_reference_register.csv --dropbox-root "$env:DBX_ROOT"
 
 
 
 
-python -m src.isms_core_v2.cli generate --input data/sample/v2/pmds_from_importer.json --template data/templates/ISMS_MASTER_BASE.docx --output outputs/REC-PMDS-MINIBUOY-from-importer-v2.docx --update-dcr data/registers/document_control_register.csv --update-mrr data/registers/master_reference_register.csv --dropbox-root "$env:DBX_ROOT"
+
 
 
 
