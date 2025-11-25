@@ -2007,7 +2007,7 @@
                           "hyperlink": null
                         },
                         {
-                          "text": "\nThis categorisation enables TracWater IAAS to apply the correct decoding logic automatically when interpreting MQTT response messages.",
+                          "text": "This categorisation enables TracWater IAAS to apply the correct decoding logic automatically when interpreting MQTT response messages.",
                           "bold": false,
                           "italic": false,
                           "underline": false,
@@ -2035,14 +2035,14 @@
                           "hyperlink": null
                         },
                         {
-                          "text": "\n/Product Data Specifications/TracWater Mini Buoy/.",
+                          "text": "/Product Data Specifications/TracWater Mini Buoy/.",
                           "bold": false,
                           "italic": false,
                           "underline": false,
                           "hyperlink": null
                         },
                         {
-                          "text": "\nChanges to register definitions or conversion categories require approval by the ",
+                          "text": "Changes to register definitions or conversion categories require approval by the ",
                           "bold": false,
                           "italic": false,
                           "underline": false,
@@ -2077,7 +2077,7 @@
                           "hyperlink": null
                         },
                         {
-                          "text": "\nAll approved revisions are logged in the Document Revision Register.",
+                          "text": "All approved revisions are logged in the Document Revision Register.",
                           "bold": false,
                           "italic": false,
                           "underline": false,
@@ -2944,13 +2944,6 @@
                               "hyperlink": null
                             },
                             {
-                              "text": "\n",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
                               "text": "Conversion Method:",
                               "bold": true,
                               "italic": false,
@@ -2959,13 +2952,6 @@
                             },
                             {
                               "text": " Each 16-bit register contains two bytes, each representing an ASCII character. Convert and concatenate all bytes sequentially to form the final string.",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
-                              "text": "\n",
                               "bold": false,
                               "italic": false,
                               "underline": false,
@@ -3698,13 +3684,6 @@
                               "hyperlink": null
                             },
                             {
-                              "text": "\n",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
                               "text": "Conversion Method:",
                               "bold": true,
                               "italic": false,
@@ -3713,13 +3692,6 @@
                             },
                             {
                               "text": " Convert the 16-bit register to binary form, evaluate each bit according to the bit-position map, and assign the corresponding status or fault code.",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
-                              "text": "\n",
                               "bold": false,
                               "italic": false,
                               "underline": false,
@@ -4273,13 +4245,6 @@
                               "hyperlink": null
                             },
                             {
-                              "text": "\n",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
                               "text": "Conversion Method:",
                               "bold": true,
                               "italic": false,
@@ -4288,13 +4253,6 @@
                             },
                             {
                               "text": " Convert the 16-bit signed integer to binary, reverse byte order (BA → AB), interpret as an unsigned short, then apply scaling if specified.",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
-                              "text": "\n",
                               "bold": false,
                               "italic": false,
                               "underline": false,
@@ -4722,13 +4680,6 @@
                               "hyperlink": null
                             },
                             {
-                              "text": "\n",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
                               "text": "Conversion Method:",
                               "bold": true,
                               "italic": false,
@@ -4737,13 +4688,6 @@
                             },
                             {
                               "text": " Interpret the signed short, convert to decimal, then multiply by the scaling factor defined in the MODBUS map.",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
-                              "text": "\n",
                               "bold": false,
                               "italic": false,
                               "underline": false,
@@ -5133,13 +5077,6 @@
                               "hyperlink": null
                             },
                             {
-                              "text": "\n",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
                               "text": "Conversion Method:",
                               "bold": true,
                               "italic": false,
@@ -5148,13 +5085,6 @@
                             },
                             {
                               "text": " Convert the signed short to 16-bit binary, extract the first byte, convert to hexadecimal, and match against the defined code map to determine the parameter state.",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
-                              "text": "\n",
                               "bold": false,
                               "italic": false,
                               "underline": false,
@@ -5595,13 +5525,6 @@
                               "hyperlink": null
                             },
                             {
-                              "text": "\n",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
                               "text": "Conversion Method:",
                               "bold": true,
                               "italic": false,
@@ -5610,13 +5533,6 @@
                             },
                             {
                               "text": " Reverse byte order, split each byte, convert to integers, and concatenate with a decimal separator (e.g. “3.11”, “2.7”).",
-                              "bold": false,
-                              "italic": false,
-                              "underline": false,
-                              "hyperlink": null
-                            },
-                            {
-                              "text": "\n",
                               "bold": false,
                               "italic": false,
                               "underline": false,

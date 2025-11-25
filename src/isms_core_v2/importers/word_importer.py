@@ -52,6 +52,10 @@ from docx.oxml.ns import qn
 # Run extraction with hyperlink preservation
 # ---------------------------------------------------------------------------
 
+from docx.text.paragraph import Paragraph
+from docx.oxml.ns import qn
+from typing import List, Dict, Any, Optional
+
 def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
     """
     Return an ordered list of run fragments from a paragraph, preserving:
@@ -66,9 +70,9 @@ def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
         [
             {
                 "text": str,
-                "bold": bool | None,
-                "italic": bool | None,
-                "underline": bool | None,
+                "bold": bool,
+                "italic": bool,
+                "underline": bool,
                 "hyperlink": str | None,
             },
             ...
@@ -76,7 +80,9 @@ def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
     """
     runs_data: List[Dict[str, Any]] = []
 
-    # Build a map: run element -> hyperlink URL (if any)
+    # ------------------------------------------------------------------
+    # 1) Build a map: low-level w:r element -> hyperlink URL (if any)
+    # ------------------------------------------------------------------
     hyperlink_map: Dict[Any, Optional[str]] = {}
     p_elm = paragraph._p  # CT_P (low-level XML)
     part = paragraph.part
@@ -87,7 +93,7 @@ def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
         url: Optional[str] = None
         if r_id is not None and r_id in part.rels:
             rel = part.rels[r_id]
-            # python-docx Relationship exposes the URL as .target_ref
+            # python-docx exposes the target URL as .target_ref
             target = getattr(rel, "target_ref", None)
             if target is not None:
                 url = str(target)
@@ -96,22 +102,54 @@ def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
         for r in h.findall(".//w:r", p_elm.nsmap):
             hyperlink_map[r] = url
 
-    # Now iterate python-docx Run objects in order; map them to URLs where present
-    for run in paragraph.runs:
-        r_elm = run._r  # CT_R
-        url = hyperlink_map.get(r_elm)
+    # ------------------------------------------------------------------
+    # 2) Walk all w:r nodes in document order (NOT paragraph.runs)
+    #    python-docx does not currently expose w:hyperlink runs via
+    #    paragraph.runs, so we read directly from the XML tree.
+    # ------------------------------------------------------------------
+    nsmap = p_elm.nsmap
+    for r in p_elm.findall(".//w:r", nsmap):
+        # Collect the visible text for this run
+        texts = [t.text or "" for t in r.findall(".//w:t", nsmap)]
+        run_text = "".join(texts)
+        if not run_text:
+            continue  # skip empty runs
+
+        # Run formatting from XML
+        rPr = r.find("w:rPr", nsmap)
+        bold = False
+        italic = False
+        underline = False
+
+        if rPr is not None:
+            if rPr.find("w:b", nsmap) is not None:
+                bold = True
+            if rPr.find("w:i", nsmap) is not None:
+                italic = True
+            if rPr.find("w:u", nsmap) is not None:
+                underline = True
+
+        url = hyperlink_map.get(r)
+        if url:
+            underline = True  # hyperlinks are usually underlined
 
         runs_data.append(
             {
-                "text": run.text or "",
-                "bold": bool(run.bold) if run.bold is not None else False,
-                "italic": bool(run.italic) if run.italic is not None else False,
-                "underline": bool(run.underline) if run.underline is not None else bool(url),
+                "text": run_text,
+                "bold": bold,
+                "italic": italic,
+                "underline": underline,
                 "hyperlink": url,
             }
         )
 
     return runs_data
+
+
+
+
+
+
 
 
 # ---------------------------------------------------------------------------
