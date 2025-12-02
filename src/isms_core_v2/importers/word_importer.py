@@ -40,7 +40,7 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-import re  # ← NEW
+import re
 
 from docx import Document
 from docx.text.paragraph import Paragraph
@@ -51,6 +51,7 @@ from docx.oxml.ns import qn
 # ---------------------------------------------------------------------------
 # Run extraction with hyperlink preservation
 # ---------------------------------------------------------------------------
+
 
 def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
     """
@@ -66,9 +67,9 @@ def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
         [
             {
                 "text": str,
-                "bold": bool | None,
-                "italic": bool | None,
-                "underline": bool | None,
+                "bold": bool,
+                "italic": bool,
+                "underline": bool,
                 "hyperlink": str | None,
             },
             ...
@@ -76,18 +77,35 @@ def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
     """
     runs_data: List[Dict[str, Any]] = []
 
-    # Build a map: run element -> hyperlink URL (if any)
+    # ------------------------------------------------------------------
+    # 1) Build a map: low-level w:r element -> hyperlink URL (if any)
+    #
+    #    We support two Word hyperlink encodings:
+    #
+    #    (a) Relationship-based hyperlinks:
+    #        <w:hyperlink r:id="rId5"><w:r>...</w:r></w:hyperlink>
+    #
+    #    (b) Field-code-based hyperlinks ("HYPERLINK" fields):
+    #        <w:fldChar w:fldCharType="begin"/>
+    #        <w:instrText> HYPERLINK "https://..." </w:instrText>
+    #        <w:fldChar w:fldCharType="separate"/>
+    #        <w:r>Visible Text</w:r>
+    #        <w:fldChar w:fldCharType="end"/>
+    #
+    #    We first collect (a), then add (b) only for runs that don't
+    #    already have a mapping.
+    # ------------------------------------------------------------------
     hyperlink_map: Dict[Any, Optional[str]] = {}
     p_elm = paragraph._p  # CT_P (low-level XML)
     part = paragraph.part
 
-    # Find all w:hyperlink elements in the paragraph
+    # 1a) Relationship-based hyperlinks (<w:hyperlink r:id="...">)
     for h in p_elm.findall(".//w:hyperlink", p_elm.nsmap):
         r_id = h.get(qn("r:id"))
         url: Optional[str] = None
         if r_id is not None and r_id in part.rels:
             rel = part.rels[r_id]
-            # python-docx Relationship exposes the URL as .target_ref
+            # python-docx exposes the target URL as .target_ref
             target = getattr(rel, "target_ref", None)
             if target is not None:
                 url = str(target)
@@ -96,17 +114,93 @@ def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
         for r in h.findall(".//w:r", p_elm.nsmap):
             hyperlink_map[r] = url
 
-    # Now iterate python-docx Run objects in order; map them to URLs where present
-    for run in paragraph.runs:
-        r_elm = run._r  # CT_R
-        url = hyperlink_map.get(r_elm)
+    # ------------------------------------------------------------------
+    # 1b) Also detect field-code style hyperlinks (HYPERLINK fields)
+    #     Word sometimes represents hyperlinks as fields instead of
+    #     <w:hyperlink> elements. These typically look like:
+    #
+    #       <w:fldChar w:fldCharType="begin"/>
+    #       <w:instrText> HYPERLINK "https://example.com" </w:instrText>
+    #       <w:fldChar w:fldCharType="separate"/>
+    #       <w:r>Visible text</w:r>
+    #       <w:fldChar w:fldCharType="end"/>
+    #
+    #     We scan those field instructions and map all w:r nodes between
+    #     'begin' and 'end' to the extracted URL, but ONLY if they do not
+    #     already have a hyperlink from the relationship-based mapping
+    #     above. That way, real <w:hyperlink> elements always take
+    #     precedence.
+    # ------------------------------------------------------------------
+    current_field_link: Optional[str] = None
+    inside_field = False
+
+    for child in p_elm.iterchildren():
+        tag = child.tag
+
+        # Field begins
+        if tag.endswith("fldChar") and child.get(qn("w:fldCharType")) == "begin":
+            inside_field = True
+            current_field_link = None
+
+        # Field instructions – look for HYPERLINK "url"
+        if tag.endswith("instrText") and inside_field:
+            instr = (child.text or "").strip()
+            if instr:
+                m = re.search(r'HYPERLINK\s+"([^"]+)"', instr)
+                if m:
+                    current_field_link = m.group(1)
+
+        # Field ends – stop applying the current link
+        if tag.endswith("fldChar") and child.get(qn("w:fldCharType")) == "end":
+            inside_field = False
+            current_field_link = None
+
+        # Apply the field-code hyperlink to runs that don't already
+        # have a mapping from <w:hyperlink>.
+        if tag.endswith("r") and inside_field and current_field_link:
+            if child not in hyperlink_map:
+                hyperlink_map[child] = current_field_link
+
+    # ------------------------------------------------------------------
+    # 2) Walk all w:r nodes in document order (NOT paragraph.runs)
+    #    python-docx does not currently expose w:hyperlink runs via
+    #    paragraph.runs, so we read directly from the XML tree.
+    # ------------------------------------------------------------------
+    nsmap = p_elm.nsmap
+    for r in p_elm.findall(".//w:r", nsmap):
+        # Collect the visible text for this run
+        texts = [t.text or "" for t in r.findall(".//w:t", nsmap)]
+        run_text = "".join(texts)
+        if not run_text:
+            continue  # skip empty runs
+
+        # Run formatting from XML
+        rPr = r.find("w:rPr", nsmap)
+        bold = False
+        italic = False
+        underline = False
+
+        if rPr is not None:
+            if rPr.find("w:b", nsmap) is not None:
+                bold = True
+            if rPr.find("w:i", nsmap) is not None:
+                italic = True
+            if rPr.find("w:u", nsmap) is not None:
+                underline = True
+
+        url = hyperlink_map.get(r)
+        if url:
+            # Hyperlinks are usually underlined in the UI, but in case the
+            # original formatting did something different, we still mark
+            # underline=True whenever we know it's a hyperlink.
+            underline = True
 
         runs_data.append(
             {
-                "text": run.text or "",
-                "bold": bool(run.bold) if run.bold is not None else False,
-                "italic": bool(run.italic) if run.italic is not None else False,
-                "underline": bool(run.underline) if run.underline is not None else bool(url),
+                "text": run_text,
+                "bold": bold,
+                "italic": italic,
+                "underline": underline,
                 "hyperlink": url,
             }
         )
@@ -117,6 +211,7 @@ def extract_runs_with_hyperlinks(paragraph: Paragraph) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # Content-block helpers
 # ---------------------------------------------------------------------------
+
 
 def _detect_list_kind(paragraph: Paragraph) -> Optional[str]:
     """
@@ -151,10 +246,6 @@ def _detect_list_kind(paragraph: Paragraph) -> Optional[str]:
     return None
 
 
-
-
-
-
 def _paragraph_to_block(paragraph: Paragraph) -> Optional[Dict[str, Any]]:
     """
     Convert a paragraph to a JSON content block.
@@ -162,32 +253,34 @@ def _paragraph_to_block(paragraph: Paragraph) -> Optional[Dict[str, Any]]:
     - Skips completely empty paragraphs.
     - Detects bullet/numbered list items and emits 'bullet_list' /
       'numbered_list' blocks so the renderer can map them to ISMS list styles.
-    - Otherwise, preserves both plain text and rich runs (with hyperlink, bold, etc.).
+    - For any text-ish block we also capture rich runs, including hyperlinks.
     """
     plain_text = paragraph.text or ""
     if not plain_text.strip():
         # Completely empty paragraph; usually we can skip
         return None
 
-    # 1) First, see if this paragraph is a list item
-    list_kind = _detect_list_kind(paragraph)
-    if list_kind is not None:
-        # Each paragraph becomes a single list item
-        # Renderer will group consecutive items and restart numbering as needed.
-        return {
-            "kind": list_kind,        # "bullet_list" or "numbered_list"
-            "text": [plain_text],     # list of items
-        }
-
-    # 2) Otherwise, treat as a normal paragraph with rich runs
+    # Capture run fragments (with hyperlinks) up-front so we can reuse them
     runs = extract_runs_with_hyperlinks(paragraph)
 
-    block: Dict[str, Any] = {
+    # 1) List items become 'bullet_list' / 'numbered_list' blocks.
+    #    We keep the existing text representation so the renderer can
+    #    still group and restart numbering, but now we also attach 'runs'
+    #    so hyperlinks are preserved.
+    list_kind = _detect_list_kind(paragraph)
+    if list_kind is not None:
+        return {
+            "kind": list_kind,        # "bullet_list" or "numbered_list"
+            "text": [plain_text],     # one item per block (as before)
+            "runs": runs,
+        }
+
+    # 2) Normal paragraphs (non-list)
+    return {
         "kind": "paragraph",
         "text": plain_text,
         "runs": runs,
     }
-    return block
 
 
 
@@ -225,8 +318,6 @@ def _table_to_block(table: Table) -> Dict[str, Any]:
     }
 
 
-
-
 def _iter_block_items(doc: Document):
     """
     Yield top-level block items (Paragraph or Table) from the document body
@@ -240,11 +331,6 @@ def _iter_block_items(doc: Document):
             yield Paragraph(child, doc)
         elif child.tag == qn("w:tbl"):
             yield Table(child, doc)
-
-
-
-
-
 
 
 def _get_heading_level(paragraph: Paragraph) -> Optional[int]:
@@ -270,7 +356,6 @@ def _get_heading_level(paragraph: Paragraph) -> Optional[int]:
     return None
 
 
-
 def _slugify(text: str) -> str:
     """
     Turn a heading title into a safe section key, e.g.:
@@ -278,11 +363,6 @@ def _slugify(text: str) -> str:
     """
     base = re.sub(r"[^a-zA-Z0-9]+", "_", text.strip().lower()).strip("_")
     return base or "section"
-
-
-
-
-
 
 
 def _import_body_as_single_section(doc: Document, title: str) -> Dict[str, Any]:
@@ -295,98 +375,70 @@ def _import_body_as_single_section(doc: Document, title: str) -> Dict[str, Any]:
       - Preserve bullet / numbered lists via _paragraph_to_block().
       - Preserve tables via _table_to_block().
     """
-
-    # Top-level catch-all section that the ISMS generator expects
-    main_section: Dict[str, Any] = {
+    root_section: Dict[str, Any] = {
         "key": "record_content",
-        "title": title or "Record Content",
+        "title": title,
         "level": 1,
         "content": [],
         "subsections": [],
     }
 
-    # section_stack[i] is the most recent section at level i.
-    # Index 0 is the top-level record_content.
-    section_stack: List[Dict[str, Any]] = [main_section]
+    # Stack of (heading_level, section_dict)
+    section_stack: List[tuple[int, Dict[str, Any]]] = [(1, root_section)]
+
+    def current_section() -> Dict[str, Any]:
+        return section_stack[-1][1]
 
     for item in _iter_block_items(doc):
-        # ------------------------------------------------------
-        # 1. Paragraphs: check if they are headings; otherwise
-        #    treat as normal content (including lists).
-        # ------------------------------------------------------
         if isinstance(item, Paragraph):
             heading_level = _get_heading_level(item)
-
             if heading_level is not None:
-                # Convert Word Heading N → ISMS tree level N+1 (max level 5)
-                lvl = heading_level + 1
-                if lvl > 5:
-                    lvl = 5
-
-                text = (item.text or "").strip()
-                if not text:
-                    continue
-
-                key = _slugify(text)
+                # This paragraph is a heading: create a new section.
+                heading_text = item.text.strip() or f"Heading {heading_level}"
+                key = _slugify(heading_text)
 
                 new_section: Dict[str, Any] = {
                     "key": key,
-                    "title": text,
-                    "level": lvl,
+                    "title": heading_text,
+                    "level": heading_level + 1,  # nested under record_content
                     "content": [],
                     "subsections": [],
                 }
 
-                # Ensure the stack length matches the *parent* level:
-                # parent of level N is level N-1
-                while len(section_stack) > (lvl - 1):
+                # Attach to the appropriate parent based on heading level.
+                while section_stack and section_stack[-1][0] >= heading_level + 1:
                     section_stack.pop()
+                parent_section = section_stack[-1][1]
+                parent_section["subsections"].append(new_section)
 
-                parent = section_stack[-1]
-                parent.setdefault("subsections", []).append(new_section)
-                section_stack.append(new_section)
-
-                # Don’t add the heading itself as a content block
+                section_stack.append((heading_level + 1, new_section))
                 continue
 
-            # Not a heading: treat as body content under the current section
+            # Normal paragraph: convert to a content block
             block = _paragraph_to_block(item)
+            if block is not None:
+                current_section()["content"].append(block)
 
-        # ------------------------------------------------------
-        # 2. Tables → table ContentBlocks
-        # ------------------------------------------------------
         elif isinstance(item, Table):
-            block = _table_to_block(item)
+            table_block = _table_to_block(item)
+            current_section()["content"].append(table_block)
 
-        else:
-            block = None
-
-        # Attach any content block (paragraph / list / table) to
-        # the current (deepest) section.
-        if block is not None:
-            current_section = section_stack[-1]
-            current_section.setdefault("content", []).append(block)
-
-    return main_section
-
-
-
-
-
+    return root_section
 
 
 # ---------------------------------------------------------------------------
-# Public API
+# High-level import function
 # ---------------------------------------------------------------------------
+
 
 def import_word_to_json(
     input_path: Path,
-    doc_type: str = "Record",
-    doc_id: str = "REC-UNSPECIFIED-001",
+    doc_type: str,
+    doc_id: str,
     title: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Main API: load a .docx and return JSON ready for the ISMS generator.
+    Import a Word document and return the ISMS JSON structure.
 
     You can plug this into your CLI or call it from `cli.py`.
 
@@ -435,7 +487,7 @@ def import_word_to_json(
     # These are stubs (empty content); they can be populated later, but
     # their presence satisfies the schema and keeps the CLI quiet.
     # ------------------------------------------------------------------
-    mandatory_sections: list[tuple[str, str]] = [
+    mandatory_sections: List[tuple[str, str]] = [
         ("title_page", "Title Page"),
         ("document_control", "Document Control"),
         ("table_of_contents", "Table of Contents"),
@@ -448,7 +500,7 @@ def import_word_to_json(
         ("related_documents", "Related Documents"),
     ]
 
-    sections: list[Dict[str, Any]] = []
+    sections: List[Dict[str, Any]] = []
 
     # In case you later add more sections, collect any existing keys
     existing_keys = {main_section.get("key")} if main_section.get("key") else set()
@@ -495,7 +547,6 @@ def import_word_to_json(
             }
         )
 
-
     # Finally, append the actual imported content
     sections.append(main_section)
 
@@ -538,14 +589,10 @@ def import_word_to_document_dict(
     )
 
 
-
-
-
-
-
 # ---------------------------------------------------------------------------
 # CLI entry point (optional)
 # ---------------------------------------------------------------------------
+
 
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(
@@ -562,7 +609,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument(
         "--doc-id",
         required=True,
-        help="Document ID for metadata.doc_id"
+        help="Document ID for metadata.doc_id",
     )
     parser.add_argument(
         "--title",
@@ -585,7 +632,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     with output_path.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-    print(f"[OK] Imported Word document:")
+    print("[OK] Imported Word document:")
     print(f"     Source: {input_path}")
     print(f"     Output: {output_path}")
 

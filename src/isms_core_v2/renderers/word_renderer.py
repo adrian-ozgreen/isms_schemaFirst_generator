@@ -27,6 +27,8 @@ from ..models import DocumentModel, Section, ContentBlock, DocMetadata  # adjust
 
 import re
 
+from docx.shared import Inches
+
 
 # -------------------------------------------------------------------
 # Placeholder → metadata resolver (all supported placeholders)
@@ -240,6 +242,47 @@ def _add_hyperlink_run(
 
 
 
+
+def _add_text_with_inline_hyperlinks(paragraph: Paragraph, text: str) -> None:
+    """
+    Render a plain text string that may contain inline hyperlink markers of the form:
+        {{HYPERLINK|<url>|<label>}}
+
+    Everything outside the markers is added as normal text runs.
+    For each marker, we create a true Word hyperlink run.
+    """
+    if not text:
+        return
+
+    # Marker format: {{HYPERLINK|url|label}}
+    pattern = re.compile(r"\{\{HYPERLINK\|([^|]+)\|([^}]*)\}\}")
+
+    pos = 0
+    for match in pattern.finditer(text):
+        start, end = match.span()
+
+        # Text before the marker
+        if start > pos:
+            paragraph.add_run(text[pos:start])
+
+        url = match.group(1)
+        label = match.group(2) or match.group(1)
+
+        _add_hyperlink_run(paragraph, url, label)
+
+        pos = end
+
+    # Trailing text after last marker
+    if pos < len(text):
+        paragraph.add_run(text[pos:])
+
+
+
+
+
+
+
+
 def _render_runs_paragraph(
     doc: Document,
     runs: Sequence[Dict[str, Any]],
@@ -303,7 +346,8 @@ def _render_runs_paragraph(
             run.italic = italic
             run.underline = underline
 
-
+    # ✅ IMPORTANT: ensure we always return the paragraph
+    return p
 
 
 
@@ -441,14 +485,16 @@ def _render_numbered_list_group(doc: Document, items: List[str]) -> None:
         if not text:
             continue
 
+        # Create the paragraph and apply the numbered-list style
         p = doc.add_paragraph()
-        # Manual "1. " prefix
-        p.add_run(f"{number}. {text}")
-
-        # Apply style for indent/spacing (no auto-numbering in the style)
         _apply_first_existing_style(p, NUMBERED_STYLE_CANDIDATES)
 
+        # Build "N. ..." and render it with inline hyperlink markers
+        full_text = f"{number}. {text}"
+        _add_text_with_inline_hyperlinks(p, full_text)
+
         number += 1
+
 
 
 # -------------------------------------------------------------------
@@ -461,10 +507,46 @@ def _add_paragraph_block(doc: Document, block: ContentBlock) -> None:
 
 
 def _add_bullet_list_block(doc: Document, block: ContentBlock) -> None:
-    items = block.text if isinstance(block.text, list) else [str(block.text)]
-    for text in items:
-        p = doc.add_paragraph(text or "")
-        _apply_first_existing_style(p, BULLET_STYLE_CANDIDATES)
+    """
+    Render a single bullet-list ContentBlock.
+
+    If 'runs' are present we use them so that rich formatting and hyperlinks
+    are preserved. Otherwise we fall back to the plain-text behaviour.
+    """
+    items = block.text or []
+
+    # Prefer rich runs when available (this is how the "Reference link"
+    # bullets keep their hyperlinks).
+    if getattr(block, "runs", None):
+        # Each bullet_list block in our schema represents a single bullet item,
+        # so we render one paragraph using the runs.
+        para = _render_runs_paragraph(
+            doc,
+            block.runs,
+            style_candidates=BULLET_STYLE_CANDIDATES,
+        )
+        para_format = para.paragraph_format
+        para_format.left_indent = Inches(0.5)
+        para_format.first_line_indent = Inches(-0.25)
+        return
+
+    # Fallback: old behaviour (no hyperlink information available),
+    # but using our style helper instead of the old _find_first_existing_style.
+    for item_text in items:
+        if not item_text:
+            continue
+
+        para = doc.add_paragraph()
+        _apply_first_existing_style(para, BULLET_STYLE_CANDIDATES)
+        # Allow inline hyperlink markers if they ever appear in bullet text
+        _add_text_with_inline_hyperlinks(para, str(item_text))
+
+        para_format = para.paragraph_format
+        para_format.left_indent = Inches(0.5)
+        para_format.first_line_indent = Inches(-0.25)
+
+
+
 
 
 def _render_content_block(doc: Document, block: ContentBlock) -> None:
@@ -474,30 +556,110 @@ def _render_content_block(doc: Document, block: ContentBlock) -> None:
     Numbered lists are handled separately in the section renderer so that
     we can group them and restart numbering at 1 per logical list.
     """
-    # Paragraphs: prefer rich runs if available, else fall back to plain text
+
+    # ---------------------------------------------------------
+    # Paragraphs: prefer rich runs if available, else fall back
+    # to plain text. If the paragraph contains a hyperlink run,
+    # we render it with live links; and if it looks like a
+    # "Reference link" bullet, we use the bullet style.
+    # ---------------------------------------------------------
     if block.kind == "paragraph":
         runs = getattr(block, "runs", None)
+
         if runs:
+            # Detect if any run has a hyperlink
+            def _get_href(frag: Any) -> str | None:
+                if isinstance(frag, dict):
+                    return frag.get("hyperlink")
+                return getattr(frag, "hyperlink", None)
+
+            has_href = any(_get_href(frag) for frag in runs)
+
+            if has_href:
+                # Build the full text so we can detect "Reference link" prefix
+                def _get_text(frag: Any) -> str:
+                    if isinstance(frag, dict):
+                        return (frag.get("text") or "")
+                    return getattr(frag, "text", "") or ""
+
+                full_text = "".join(_get_text(frag) for frag in runs)
+                is_reference_link = full_text.strip().lower().startswith("reference link")
+
+                # Choose style: bullet style for "Reference link…" items,
+                # body style for other hyperlink paragraphs
+                style_candidates = BULLET_STYLE_CANDIDATES if is_reference_link else BODY_STYLE_CANDIDATES
+
+                p = doc.add_paragraph()
+                _apply_first_existing_style(p, style_candidates)
+
+                # Render runs into this paragraph, preserving hyperlink info
+                for frag in runs:
+                    # Support both dict and RunFragment model
+                    if isinstance(frag, dict):
+                        text = frag.get("text") or ""
+                        bold = bool(frag.get("bold"))
+                        italic = bool(frag.get("italic"))
+                        underline = bool(frag.get("underline"))
+                        href = frag.get("hyperlink")
+                    else:
+                        text = getattr(frag, "text", "") or ""
+                        bold = bool(getattr(frag, "bold", False))
+                        italic = bool(getattr(frag, "italic", False))
+                        underline = bool(getattr(frag, "underline", False))
+                        href = getattr(frag, "hyperlink", None)
+
+                    if not text:
+                        continue
+
+                    if href:
+                        _add_hyperlink_run(
+                            paragraph=p,
+                            url=str(href),
+                            text=text,
+                            bold=bold,
+                            italic=italic,
+                            # force underline for hyperlinks unless explicitly False
+                            underline=underline or True,
+                        )
+                    else:
+                        run = p.add_run(text)
+                        run.bold = bold
+                        run.italic = italic
+                        run.underline = underline
+
+                # Done – we handled this paragraph fully.
+                return
+
+            # Paragraph has runs but no hyperlinks → use the standard helper
             _render_runs_paragraph(doc, runs, BODY_STYLE_CANDIDATES)
+
         else:
+            # No run fragments → plain paragraph text
             _add_paragraph_block(doc, block)
 
-    # Bullets: use the existing list helper; importer populates text items
-    elif block.kind == "bullet_list":
+        return
+
+    # ---------------------------------------------------------
+    # Bullets: use the existing list helper; importer populates
+    # text items. (No change here.)
+    # ---------------------------------------------------------
+    if block.kind == "bullet_list":
         _add_bullet_list_block(doc, block)
 
-    # Tables: render via table helper
-    elif block.kind == "table":
+
+    # Tables: render via table helper (unchanged)
+    if block.kind == "table":
         _render_table_block(doc, block)
+        return
 
     # Numbered lists are rendered via _render_section_recursive/_render_numbered_list_group,
     # so we don't handle them here.
-    elif block.kind == "numbered_list":
+    if block.kind == "numbered_list":
         return
 
-    else:
-        # Future-proof: ignore unknown kinds gracefully
-        return
+    # Future-proof: ignore unknown kinds gracefully
+    return
+
 
 
 

@@ -37,15 +37,18 @@ class ContentBlock(BaseModel):
     caption: str | None = None             # Optional caption
 
     @validator("runs", always=True)
-    def validate_runs_for_paragraph_only(cls, v, values):
+    def validate_runs_for_text_blocks(cls, v, values):
         """
-        Only paragraphs are allowed to have runs. For other kinds, runs must
-        be absent or empty.
+        Allow 'runs' for normal paragraphs and list items. Other block
+        kinds (tables, figures, etc.) must not use 'runs'.
         """
         kind = values.get("kind")
-        if kind != "paragraph" and v:
-            raise ValueError("'runs' is only supported for kind=paragraph")
+        if kind not in ("paragraph", "bullet_list", "numbered_list") and v:
+            raise ValueError(
+                "'runs' is only supported for paragraph and list kinds"
+            )
         return v
+
 
     @validator("text", always=True)
     def validate_text_for_non_table(cls, v, values):
